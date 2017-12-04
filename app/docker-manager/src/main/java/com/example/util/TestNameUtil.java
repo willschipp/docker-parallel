@@ -8,20 +8,20 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class TestNameUtil {
-	
+
 	private static final String DELIMITER = ",";
 
 	public static List<String> getListOfTestNames(String location) throws Exception {
 		List<Path> paths = Files.walk(Paths.get(location)).filter(Files::isRegularFile).filter(value -> value.toUri().toString().contains("Test")).collect(Collectors.toList());
-		
+
 		List<String> names = new ArrayList<String>();
 		for (Path path : paths) {
 			names.add(cleanUpName(path.getFileName().toString()));
 		}//end for
-		
+
 		return names;
 	}
-	
+
 	public static List<String> getListBuckets(String location,int bucketCount) throws Exception {
 		List<String> buckets = new ArrayList<String>();
 		//get the list of names
@@ -48,14 +48,14 @@ public class TestNameUtil {
 				position += bucketSize;
 			}//end for
 		}//end if
-		
+
 		return buckets;
 	}
-	
+
 	public static String getEnvironment(String testList) throws Exception {
 		return "-Dtest=" + testList;
 	}
-	
+
 	private static String listAsString(String... names) throws Exception {
 		StringBuilder builder = new StringBuilder();
 		for (String name :names) {
@@ -66,8 +66,9 @@ public class TestNameUtil {
 		}//end for
 		return builder.toString();
 	}
-	
+
 	private static String cleanUpName(String name) throws Exception {
+		System.out.println(name);
 		return name.substring(0, name.lastIndexOf("."));
 	}
 }

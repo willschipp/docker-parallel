@@ -3,6 +3,7 @@ package com.example.endpoint;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
@@ -31,54 +32,63 @@ public class RunService {
 
 //	@Autowired
 	private DockerClient dockerClient;
-		
+
 	private String location;
-	
+
 	@Autowired
 	private ContainerRepository containerRepository;
-	
+
 	@Autowired
 	private HostRepository hostRepository;
-	
+
 	@RequestMapping(method=RequestMethod.POST)
-	public void run(@RequestParam("name") String name,@RequestParam("url") String gitUrl,HttpServletResponse response) throws Exception {
+	public void run(@RequestParam("name") String name,@RequestParam("url") String gitUrl,@RequestParam("instances") int instanceCount,HttpServletResponse response) throws Exception {
 		//get the list of hosts
 		List<Host> hosts = hostRepository.findAll();
 		if (hosts == null || hosts.isEmpty()) {
 			response.setStatus(HttpStatus.NOT_FOUND.value());
 			return;
 		}//end if
+		//get the number of buckets per host
 		//get the list of tests in buckets
 		//clone the source
 		Git git = Git.cloneRepository().setURI(gitUrl).call();
 		//scan that directory
 		String location = git.getRepository().getDirectory().getAbsolutePath();
 		location = location.substring(0, location.lastIndexOf("/"));
-		List<String> buckets = TestNameUtil.getListBuckets(location, hosts.size());
+		List<String> buckets = TestNameUtil.getListBuckets(location, hosts.size() * instanceCount);
 		//iterate over the hosts and send the tests
-		for (int i=0;i<buckets.size();i++) {
+		// for (int i=0;i<buckets.size();i++) {
+		Iterator<String> bucketIterator = buckets.iterator();
+		for (int i=0;i<hosts.size();i++) {
 			Host host = hosts.get(i);
-			String bucket = buckets.get(i);
+
+			// String bucket = buckets.get(i);
+
 			DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().withDockerHost(host.getAddress()).build();
 			dockerClient = DockerClientBuilder.getInstance(config).build();
-			
-			String id = dockerClient.createContainerCmd(name).withEnv(TestNameUtil.getEnvironment(bucket)).exec().getId();
-			Container container = new Container();
-			container.setId(id);
-			//save
-			containerRepository.save(container);
-			//start
-			dockerClient.startContainerCmd(id).exec();
-			container.setStartTime(new Date());
-			//save
-			containerRepository.save(container);
+
+			//loop over the instance size
+			for (int j=0;j<instanceCount;j++) {
+				String bucket = bucketIterator.next();//get the next bucket
+				String id = dockerClient.createContainerCmd(name).withEnv(TestNameUtil.getEnvironment(bucket)).exec().getId();
+				Container container = new Container();
+				container.setId(id);
+				//save
+				containerRepository.save(container);
+				//start
+				dockerClient.startContainerCmd(id).exec();
+				container.setStartTime(new Date());
+				//save
+				containerRepository.save(container);
+			}//end for
 		}//end for
-		
+
 		//clean up
 		Files.delete(Paths.get(location));
-		
+
 		//respond
 		response.setStatus(HttpStatus.OK.value());
 	}
-	
+
 }
