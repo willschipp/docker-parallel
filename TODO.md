@@ -7,3 +7,7 @@
 - setup a docker swarm
 - deploy compose over swarm
 - scale over swarm
+- maven surefire to run subset of tests as an argument
+- ~~docker image with java and maven only~~
+- maven system out parsing
+- gather tests from code

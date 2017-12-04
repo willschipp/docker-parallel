@@ -1,0 +1,11 @@
+#packer
+packer_cache
+output-virtualbox-iso
+*.ovf
+*.vmdk
+
+#maven
+.classpath
+.project
+.settings
+target

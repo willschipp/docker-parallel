@@ -1,0 +1,68 @@
+{
+  "variables":{
+    "ansible_script":"ansible/docker.yml",
+    "role_paths":"ansible/roles/docker,ansible/roles/common"
+  },
+  "builders":[{
+    "type": "virtualbox-iso",
+    "guest_os_type": "RedHat_64",
+    "iso_url": "http://ba.mirror.garr.it/mirrors/CentOS/7/isos/x86_64/CentOS-7-x86_64-Minimal-1708.iso",
+    "iso_checksum": "bba314624956961a2ea31dd460cd860a77911c1e0a56e4820a12b9c5dad363f5",
+    "iso_checksum_type": "sha256",
+    "ssh_username": "vagrant",
+    "ssh_password": "vagrant",
+    "ssh_port":22,
+    "ssh_wait_timeout": "600s",
+    "guest_additions_path":"VBoxGuestAdditions_{{.Version}}.iso",
+    "headless":true,
+    "vboxmanage": [
+          [
+            "modifyvm",
+            "{{.Name}}",
+            "--memory",
+            "1536"
+          ],
+          [
+            "modifyvm",
+            "{{.Name}}",
+            "--cpus",
+            "1"
+          ],
+          [
+            "modifyvm",
+            "{{.Name}}",
+            "--audio",
+            "none"
+          ]
+        ],
+    "http_directory": "./config",
+    "boot_command": [
+            "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/kickstart.cfg<enter>"
+          ],
+    "boot_wait":"10s",
+    "shutdown_command": "echo 'vagrant' | sudo -S shutdown -P now"
+  }],
+  "provisioners": [
+    {
+      "execute_command": "echo 'vagrant' | {{.Vars}} sudo -E -S bash '{{.Path}}'",
+      "scripts": [
+        "scripts/sshd.sh",
+        "scripts/vagrant_keys.sh",
+        "scripts/ansible_install.sh",
+        "scripts/virtualbox_guest.sh",
+        "scripts/cleanup.sh"
+      ],
+      "type": "shell",
+      "pause_before": "10s"
+    },
+    {
+      "type":"ansible-local",
+      "playbook_file":"{{user `ansible_script`}}",
+      "role_paths": "{{user `role_paths`}}"
+    }
+  ],
+  "post-processors":[{
+      "type":"shell-local",
+      "inline":["mv output-virtualbox-iso/*.ovf .","mv output-virtualbox-iso/*.vmdk .","rm -rf output-virtualbox-iso"]
+  }]
+}

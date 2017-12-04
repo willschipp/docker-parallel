@@ -1,0 +1,44 @@
+---
+- name: install epel
+  yum:
+    name: epel-release
+    state: installed
+
+- name: setup config manager
+  yum:
+    name: yum-utils
+    state: installed
+
+- name: install docker repo
+  shell: yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+- name: install docker
+  yum:
+    name: docker-ce
+    state: installed
+
+- name: install python pip
+  yum:
+    name: python-pip
+    state: installed
+
+- name: install docker compose
+  shell: pip install docker-compose
+
+- name: copy service template
+  template:
+    src: service.j2
+    dest: /usr/lib/systemd/system/docker.service
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+
+- name: enable docker service
+  systemd:
+    name: docker
+    enabled: yes
+#
+# - name: add docker user
+#   user:
+#     name: docker
+#     group: docker

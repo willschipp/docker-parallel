@@ -1,0 +1,12 @@
+spring:
+  data:
+    rest:
+      base-path: /data
+
+docker:
+  host:
+    url: http://
+    
+consul:
+  server:
+    url: http://

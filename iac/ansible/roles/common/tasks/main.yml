@@ -1,0 +1,13 @@
+---
+- name: copy template
+  template:
+    src: locate.j2
+    dest: /root/locate.sh
+    owner: root
+    group: root
+    mode: u+rwx,g=r,o=r
+
+- name: modify rc.local
+  file:
+    path: /etc/rc.d/rc.local
+    mode: u+rwx
