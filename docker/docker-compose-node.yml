@@ -1,0 +1,7 @@
+version: '2'
+services:
+  chrome-node:
+    image: selenium/node-chrome
+    network_mode: bridge
+    external_links:
+      - selenium-hub:hub

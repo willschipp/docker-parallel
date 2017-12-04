@@ -1,0 +1,8 @@
+version: '2'
+services:
+  hub:
+    container_name: selenium-hub
+    image: selenium/hub
+    ports:
+      - 4444:4444
+    network_mode: bridge
