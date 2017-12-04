@@ -35,7 +35,7 @@ public class TestNameUtil {
 			//split
 			int bucketSize = (int) Math.ceil((double)names.size() / bucketCount);
 			int position = 0;
-			for (int j=0;j<=bucketSize;j++) {
+			for (int j=0;j<bucketCount;j++) {
 				List<String> nameCollection = new ArrayList<String>();
 				for (int i=position;i<(position + bucketSize);i++) {
 					if (i < names.size()) {

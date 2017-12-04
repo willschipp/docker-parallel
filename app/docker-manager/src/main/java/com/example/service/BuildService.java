@@ -29,7 +29,7 @@ import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
 
 @Service
-public class Builder {
+public class BuildService {
 
 
 	@Async
