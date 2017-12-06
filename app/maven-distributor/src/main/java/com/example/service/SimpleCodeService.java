@@ -61,7 +61,7 @@ public class SimpleCodeService implements CodeService {
 		// clone repository
 //		HttpTransport.setConnectionFactory( preservedConnectionFactory );
 		
-		CredentialsProvider cp = new UsernamePasswordCredentialsProvider("epam_user", "epampassword");
+		CredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider("epam_user", "epampassword");
 		
 //		git.pull().call();
 		git.pull().setTransportConfigCallback(new TransportConfigCallback() {
@@ -70,7 +70,7 @@ public class SimpleCodeService implements CodeService {
 			public void configure(Transport transport) {
 				((HttpTransport)transport).setConnectionFactory(new InsecureHttpConnectionFactory());
 			}
-		}).call();
+		}).setCredentialsProvider(credentialsProvider).call();
 //		git.checkout().setName("master").call();
 //		Git git = Git.cloneRepository().setURI(location).call();
 		gitlocation = git.getRepository().getDirectory().getAbsolutePath();
