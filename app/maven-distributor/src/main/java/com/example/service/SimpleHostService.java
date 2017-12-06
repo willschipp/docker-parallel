@@ -7,10 +7,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -54,12 +56,12 @@ public class SimpleHostService implements HostService {
 	}
 
 	@Override
+	@Async
 	public void run(Host host, String location, String parameters) throws Exception {
 		//create the url
 		String url = "http://" + host.getAddress() + ":" + host.getPort() + "/api/run";
 		//init
 		RestTemplate restTemplate = new RestTemplate();
-		
 		//sort out the parameters
 		if (parameters != null && parameters.length() > 0) {
 			parameters = "-Dtest=" + parameters;

@@ -6,7 +6,12 @@ import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -66,5 +71,14 @@ public class RunEndpoint {
 		return jobService.get(uuid);
 	}
 	
-	//TODO get endpoint to get the file for uid
+	@RequestMapping(value="/{uuid}/log",method=RequestMethod.GET)
+	public ResponseEntity<Resource> getLog(@PathVariable("uuid") String uuid,HttpServletResponse response) throws Exception {
+		//get the job instance
+		JobInstance instance = jobService.get(uuid);
+		Resource file = new ByteArrayResource(instance.getLog());
+		return ResponseEntity.ok()
+				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + uuid + ".zip\"")
+				.contentType(MediaType.APPLICATION_OCTET_STREAM)
+				.body(file);
+	}
 }
