@@ -37,14 +37,14 @@ public class SimpleCodeService implements CodeService {
 
 	@Autowired
 	private CodeBaseRepository codeBaseRepository;
-	
+
 	@Autowired
 	private CodeTestRepository codeTestRepository;
-	
+
 	@Override
 	public void createCodeBase(String location,String username,String password) throws Exception {
 		String gitlocation = "/tmp/repo";
-		//check to see if the location exists on the filesystem		
+		//check to see if the location exists on the filesystem
 //		gitlocation = location.substring(location.lastIndexOf("/")+1,location.lastIndexOf("."));
 		//clean off if exists
 //		FileUtils.deleteDirectory(gitlocation);
@@ -55,28 +55,28 @@ public class SimpleCodeService implements CodeService {
 		config.setString("remote", "origin", "url", location);
 		config.setString("remote", "origin", "fetch", "+refs/heads/*:refs/remotes/origin/*");
 		config.save();
-		
+
 		//set the connection factory
 //		HttpConnectionFactory preservedConnectionFactory = HttpTransport.getConnectionFactory();
 		HttpTransport.setConnectionFactory( new InsecureHttpConnectionFactory() );
-		
+
 		// clone repository
 //		HttpTransport.setConnectionFactory( preservedConnectionFactory );
-		
+
 		PullCommand pullCommand = git.pull().setProgressMonitor(new TextProgressMonitor()).setTransportConfigCallback(new TransportConfigCallback() {
 			@Override
 			public void configure(Transport transport) {
 				((HttpTransport)transport).setConnectionFactory(new InsecureHttpConnectionFactory());
 			}
 		});
-		
+
 		if (username != null && password != null) {
 			CredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(username,password);
 			pullCommand.setCredentialsProvider(credentialsProvider);
 		}//end if
-		
-//		pullCommand.call();
-//		
+
+		pullCommand.call();
+//
 //		git.pull().setTransportConfigCallback(new TransportConfigCallback() {
 //			@Override
 //			public void configure(Transport transport) {
@@ -86,7 +86,7 @@ public class SimpleCodeService implements CodeService {
 //		git.checkout().setName("master").call();
 //		Git git = Git.cloneRepository().setURI(location).call();
 		gitlocation = git.getRepository().getDirectory().getAbsolutePath();
-		gitlocation = gitlocation.substring(0, gitlocation.lastIndexOf("/"));						
+		gitlocation = gitlocation.substring(0, gitlocation.lastIndexOf("/"));
 		//scan for tests
 		List<String> names = ScannerUtils.getListOfTestNames(gitlocation);
 		List<CodeTest> tests = new ArrayList<CodeTest>();
@@ -148,10 +148,10 @@ public class SimpleCodeService implements CodeService {
 			//return
 			return buckets;
 		}//end if
-		
+
 	}
 
-	
+
 	private List<String> getNames(List<CodeTest> tests) {
 		List<String> names = new ArrayList<String>();
 		for (CodeTest test : tests) {
@@ -159,7 +159,7 @@ public class SimpleCodeService implements CodeService {
 		}//end for
 		return names;
 	}
-	
+
 	class InsecureHttpConnectionFactory implements HttpConnectionFactory {
 
 		  @Override
@@ -173,5 +173,5 @@ public class SimpleCodeService implements CodeService {
 		    HttpSupport.disableSslVerify( connection );
 		    return connection;
 		  }
-		}	
+		}
 }
