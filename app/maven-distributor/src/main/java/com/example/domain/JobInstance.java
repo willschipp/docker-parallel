@@ -12,6 +12,8 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 public class JobInstance {
 
@@ -31,6 +33,7 @@ public class JobInstance {
 	@Column
 	private boolean finished;
 	
+	@JsonIgnore
 	@Lob
 	private byte[] log;
 	

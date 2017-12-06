@@ -16,8 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.domain.Host;
+import com.example.domain.JobInstance;
 import com.example.service.CodeService;
 import com.example.service.HostService;
+import com.example.service.JobService;
 
 @RestController
 @RequestMapping("/api/runner")
@@ -28,6 +30,9 @@ public class RunEndpoint {
 	
 	@Autowired
 	private HostService hostService;
+	
+	@Autowired
+	private JobService jobService;
 	
 	@RequestMapping(method=RequestMethod.POST)
 	public void run(@RequestBody Map<String,String> request,HttpServletResponse response) throws Exception {
@@ -51,6 +56,15 @@ public class RunEndpoint {
 		response.setStatus(HttpStatus.OK.value());
 	}
 	
+	@RequestMapping(method=RequestMethod.GET)
+	public List<JobInstance> get() throws Exception {
+		return jobService.getAll();
+	}
 	
-	//TODO create job output endpoint
+	@RequestMapping(value="/{uuid}",method=RequestMethod.GET)
+	public JobInstance get(@PathVariable("uuid") String uuid) throws Exception {
+		return jobService.get(uuid);
+	}
+	
+	//TODO get endpoint to get the file for uid
 }

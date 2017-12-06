@@ -16,8 +16,6 @@ import org.springframework.web.client.RestTemplate;
 
 import com.example.domain.Host;
 import com.example.domain.HostRepository;
-import com.example.domain.JobInstance;
-import com.example.domain.JobInstanceRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
@@ -30,7 +28,7 @@ public class SimpleHostService implements HostService {
 	private ObjectMapper mapper;
 	
 	@Autowired
-	private JobInstanceRepository jobInstanceRepository;
+	private JobService jobService;
 	
 	@Override
 	public int count() {
@@ -39,7 +37,7 @@ public class SimpleHostService implements HostService {
 
 	@Override
 	public void register(String ipAddress, String port) {
-		Host host = hostRepository.findOne(ipAddress);
+		Host host = hostRepository.findByAddressAndPort(ipAddress,port);
 		if (host == null) {
 			host = new Host();
 			host.setAddress(ipAddress);
@@ -77,28 +75,15 @@ public class SimpleHostService implements HostService {
 		//send
 		HttpEntity<String> entity = new HttpEntity<String>(mapper.writeValueAsString(requestObject),headers);
 		ResponseEntity<Map> response = restTemplate.postForEntity(new URI(url), entity, Map.class);
-		
-		JobInstance jobInstance = new JobInstance();
-		jobInstance.setCreatedDate(new Date());
-		jobInstance.setHost(host);
-		jobInstance.setUuid(response.getBody().get("uuid").toString());
 		//save
-		jobInstanceRepository.save(jobInstance);
+		jobService.createJobInstance(host, response.getBody().get("uuid").toString());
+		
 	}
 
 	@Override
 	public void processLog(String uuid, byte[] bytes) {
 		//byte array will be a zip
-		//need to 'save' it
-		JobInstance jobInstance = jobInstanceRepository.findByUuid(uuid);
-		//check
-		if (jobInstance == null) {
-			//TODO handle
-		}//end if
-		//update
-		jobInstance.setLog(bytes);
-		//save
-		jobInstanceRepository.save(jobInstance);
+		jobService.updateLog(uuid, bytes);
 	}
 
 }

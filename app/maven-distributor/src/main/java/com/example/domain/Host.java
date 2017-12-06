@@ -2,13 +2,14 @@ package com.example.domain;
 
 import java.util.Date;
 
-import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.IdClass;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 @Entity
+@IdClass(HostKey.class)
 public class Host {
 
 	@Id
@@ -17,7 +18,7 @@ public class Host {
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date updatedDate;
 
-	@Column
+	@Id
 	private String port;
 	
 	public String getAddress() {
