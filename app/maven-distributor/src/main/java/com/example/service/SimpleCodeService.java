@@ -1,7 +1,11 @@
 package com.example.service;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.Proxy;
 import java.net.URL;
 import java.util.ArrayList;
@@ -13,6 +17,7 @@ import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.TransportConfigCallback;
 import org.eclipse.jgit.lib.StoredConfig;
+import org.eclipse.jgit.lib.TextProgressMonitor;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.HttpTransport;
 import org.eclipse.jgit.transport.Transport;
@@ -65,12 +70,11 @@ public class SimpleCodeService implements CodeService {
 		
 //		git.pull().call();
 		git.pull().setTransportConfigCallback(new TransportConfigCallback() {
-			
 			@Override
 			public void configure(Transport transport) {
 				((HttpTransport)transport).setConnectionFactory(new InsecureHttpConnectionFactory());
 			}
-		}).setCredentialsProvider(credentialsProvider).call();
+		}).setCredentialsProvider(credentialsProvider).setProgressMonitor(new TextProgressMonitor()).call();
 //		git.checkout().setName("master").call();
 //		Git git = Git.cloneRepository().setURI(location).call();
 		gitlocation = git.getRepository().getDirectory().getAbsolutePath();
