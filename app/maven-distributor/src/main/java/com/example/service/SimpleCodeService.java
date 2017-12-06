@@ -1,6 +1,9 @@
 package com.example.service;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.Proxy;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -8,7 +11,14 @@ import java.util.List;
 
 import org.codehaus.plexus.util.FileUtils;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.TransportConfigCallback;
 import org.eclipse.jgit.lib.StoredConfig;
+import org.eclipse.jgit.transport.HttpTransport;
+import org.eclipse.jgit.transport.Transport;
+import org.eclipse.jgit.transport.http.HttpConnection;
+import org.eclipse.jgit.transport.http.HttpConnectionFactory;
+import org.eclipse.jgit.transport.http.JDKHttpConnectionFactory;
+import org.eclipse.jgit.util.HttpSupport;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -41,7 +51,23 @@ public class SimpleCodeService implements CodeService {
 		config.setString("remote", "origin", "url", location);
 		config.setString("remote", "origin", "fetch", "+refs/heads/*:refs/remotes/origin/*");
 		config.save();
-		git.pull().call();
+		
+		//set the connection factory
+//		HttpConnectionFactory preservedConnectionFactory = HttpTransport.getConnectionFactory();
+		HttpTransport.setConnectionFactory( new InsecureHttpConnectionFactory() );
+		
+		// clone repository
+//		HttpTransport.setConnectionFactory( preservedConnectionFactory );
+		
+		
+//		git.pull().call();
+		git.pull().setTransportConfigCallback(new TransportConfigCallback() {
+			
+			@Override
+			public void configure(Transport transport) {
+				((HttpTransport)transport).setConnectionFactory(new InsecureHttpConnectionFactory());
+			}
+		}).call();
 //		git.checkout().setName("master").call();
 //		Git git = Git.cloneRepository().setURI(location).call();
 		gitlocation = git.getRepository().getDirectory().getAbsolutePath();
@@ -118,4 +144,19 @@ public class SimpleCodeService implements CodeService {
 		}//end for
 		return names;
 	}
+	
+	class InsecureHttpConnectionFactory implements HttpConnectionFactory {
+
+		  @Override
+		  public HttpConnection create( URL url ) throws IOException {
+		    return create( url, null );
+		  }
+
+		  @Override
+		  public HttpConnection create( URL url, Proxy proxy ) throws IOException {
+		    HttpConnection connection = new JDKHttpConnectionFactory().create( url, proxy );
+		    HttpSupport.disableSslVerify( connection );
+		    return connection;
+		  }
+		}	
 }
