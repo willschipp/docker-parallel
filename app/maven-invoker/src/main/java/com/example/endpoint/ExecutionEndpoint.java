@@ -1,6 +1,7 @@
 package com.example.endpoint;
 
 import java.util.Map;
+import java.util.UUID;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -28,8 +29,11 @@ public class ExecutionEndpoint {
 	public Map<String,String> run(@RequestBody Map<String,Object> request,HttpServletResponse response) throws Exception {
 		//clone
 		Map<String,String> variables = cloneService.clone(request.get("git-url").toString());
+		//generate id
+		final String uuid = UUID.randomUUID().toString();
+		variables.put("uuid", uuid);
 		//execute
-		executionService.run(variables.get("location"), request.get("options").toString());
+		executionService.run(variables.get("location"), request.get("options").toString(),uuid);
 		//send back
 		response.setStatus(HttpStatus.CREATED.value());
 		//return variables

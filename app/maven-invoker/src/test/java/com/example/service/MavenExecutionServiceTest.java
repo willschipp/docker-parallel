@@ -1,5 +1,7 @@
 package com.example.service;
 
+import java.util.UUID;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +20,7 @@ public class MavenExecutionServiceTest {
 	@Test
 	public void testRun() throws Exception {
 		System.setProperty("maven.home", "/Users/will/Documents/tools/maven");
-		executionService.run("https://github.com/willschipp/sample-app.git","-Dtest=Second*");
+		executionService.run("https://github.com/willschipp/sample-app.git","-Dtest=Second*",UUID.randomUUID().toString());
 	}
 
 }

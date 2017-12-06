@@ -1,0 +1,10 @@
+[Unit]
+Description=App Service
+
+[Service]
+ExecStart=/usr/bin/java -Dmaven.home=/usr/local/maven -jar /home/vagrant/maven-invoker.jar
+User=vagrant
+Type=simple
+Restart=always
+[Install]
+WantedBy=multi-user.target

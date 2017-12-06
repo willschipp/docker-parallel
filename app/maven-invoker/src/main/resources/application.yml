@@ -1,0 +1,8 @@
+distributor:
+  publisher:
+    url: http://127.0.0.1:9000/api/host
+  runner:
+    url: http://127.0.0.1:9000/api/runner
+  
+server:
+  port: 8080

@@ -27,7 +27,7 @@ public class MavenExecutionService implements ExecutionService {
 	
 	@Async
 	@Override
-	public void run(String location,String options) throws Exception {
+	public void run(String location,String options,final String uuid) throws Exception {
 //		String gitlocation = null;
 //		try {
 //			//clone the location
@@ -42,7 +42,6 @@ public class MavenExecutionService implements ExecutionService {
 			request.setGoals(Collections.singletonList("test"));
 			request.setMavenOpts(options);
 			
-			final String uuid = UUID.randomUUID().toString();
 
 			Invoker invoker = new DefaultInvoker();
 			invoker.setOutputHandler(new InvocationOutputHandler() {
@@ -58,7 +57,6 @@ public class MavenExecutionService implements ExecutionService {
 					if (line.contains("Final Memory:")) {
 						lastLine = true;
 					} else if (lastLine) {
-						System.out.println("flushing...");
 						monitorService.update(uuid, builder.toString());
 					}//end if
 				}

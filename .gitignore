@@ -1,11 +1,14 @@
 #packer
 packer_cache
 output-virtualbox-iso
-*.ovf
-*.vmdk
+*.ova
 
 #maven
 .classpath
 .project
 .settings
 target
+
+
+#app
+sample-app
