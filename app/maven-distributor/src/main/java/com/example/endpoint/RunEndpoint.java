@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -39,20 +40,41 @@ public class RunEndpoint {
 	@Autowired
 	private JobService jobService;
 	
+	@Autowired
+	private TaskExecutor taskExecutor;
+	
 	@RequestMapping(method=RequestMethod.POST)
 	public void run(@RequestBody Map<String,String> request,HttpServletResponse response) throws Exception {
-		codeService.createCodeBase(request.get("git-url").toString());
-		//scan for hosts
-		List<Host> hosts = hostService.getAll();
-		if (hosts == null) {
-			throw new Exception("no hosts");
-		}//end if
-		//partition and send --> url, list of tests
-		List<String> buckets = codeService.getTestBuckets(request.get("git-url"), hosts.size());
-		//send
-		for (int i=0;i<buckets.size();i++) {
-			hostService.run(hosts.get(i), request.get("git-url").toString(), buckets.get(i));
-		}//end for
+		final String gitUrl = request.get("git-url").toString();
+		final String username = request.get("username") != null ? request.get("username").toString() : null;
+		final String password = request.get("password") != null ? request.get("password").toString() : null;
+		
+		taskExecutor.execute(new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					codeService.createCodeBase(gitUrl,username,password);
+					//scan for hosts
+					List<Host> hosts = hostService.getAll();
+					if (hosts == null) {
+						throw new Exception("no hosts");
+					}//end if
+					//partition and send --> url, list of tests
+					List<String> buckets = codeService.getTestBuckets(request.get("git-url"), hosts.size());
+					//send
+					for (int i=0;i<buckets.size();i++) {
+						hostService.run(hosts.get(i), request.get("git-url").toString(), buckets.get(i));
+					}//end for					
+				}
+				catch (Exception e) {
+					//TODO manager
+				}
+			}
+			
+		});
+
+		response.setStatus(HttpStatus.CREATED.value());
 	}
 	
 	@RequestMapping(value="/{uuid}",method=RequestMethod.POST)

@@ -1,11 +1,7 @@
 package com.example.service;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.net.Proxy;
 import java.net.URL;
 import java.util.ArrayList;
@@ -15,6 +11,7 @@ import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.PullCommand;
 import org.eclipse.jgit.api.TransportConfigCallback;
 import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.lib.TextProgressMonitor;
@@ -45,7 +42,7 @@ public class SimpleCodeService implements CodeService {
 	private CodeTestRepository codeTestRepository;
 	
 	@Override
-	public void createCodeBase(String location) throws Exception {
+	public void createCodeBase(String location,String username,String password) throws Exception {
 		String gitlocation = "/tmp/repo";
 		//check to see if the location exists on the filesystem		
 //		gitlocation = location.substring(location.lastIndexOf("/")+1,location.lastIndexOf("."));
@@ -66,15 +63,26 @@ public class SimpleCodeService implements CodeService {
 		// clone repository
 //		HttpTransport.setConnectionFactory( preservedConnectionFactory );
 		
-		CredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider("epam_user", "epampassword");
-		
-//		git.pull().call();
-		git.pull().setTransportConfigCallback(new TransportConfigCallback() {
+		PullCommand pullCommand = git.pull().setProgressMonitor(new TextProgressMonitor()).setTransportConfigCallback(new TransportConfigCallback() {
 			@Override
 			public void configure(Transport transport) {
 				((HttpTransport)transport).setConnectionFactory(new InsecureHttpConnectionFactory());
 			}
-		}).setCredentialsProvider(credentialsProvider).setProgressMonitor(new TextProgressMonitor()).call();
+		});
+		
+		if (username != null && password != null) {
+			CredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(username,password);
+			pullCommand.setCredentialsProvider(credentialsProvider);
+		}//end if
+		
+//		pullCommand.call();
+//		
+//		git.pull().setTransportConfigCallback(new TransportConfigCallback() {
+//			@Override
+//			public void configure(Transport transport) {
+//				((HttpTransport)transport).setConnectionFactory(new InsecureHttpConnectionFactory());
+//			}
+//		}).setCredentialsProvider(credentialsProvider).setProgressMonitor(new TextProgressMonitor()).call();
 //		git.checkout().setName("master").call();
 //		Git git = Git.cloneRepository().setURI(location).call();
 		gitlocation = git.getRepository().getDirectory().getAbsolutePath();

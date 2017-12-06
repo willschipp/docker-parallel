@@ -36,14 +36,14 @@ public class SimpleCodeServiceTest {
 	
 	@Test
 	public void testCreateCodeBase() throws Exception {
-		codeService.createCodeBase("https://github.com/willschipp/sample-app.git");
+		codeService.createCodeBase("https://github.com/willschipp/sample-app.git",null,null);
 		assertTrue(codeBaseRepository.count() > 0);
 		assertTrue(codeTestRepository.count() == 3);
 	}
 	
 	@Test
 	public void testGetTestBuckets() throws Exception {
-		codeService.createCodeBase("https://github.com/willschipp/sample-app.git");
+		codeService.createCodeBase("https://github.com/willschipp/sample-app.git",null,null);
 		List<String> results = null;
 		results = codeService.getTestBuckets("https://github.com/willschipp/sample-app.git",1);
 		assertTrue(results.size() == 1);
