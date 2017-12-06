@@ -1,5 +1,6 @@
 package com.example.service;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -7,6 +8,7 @@ import java.util.List;
 
 import org.codehaus.plexus.util.FileUtils;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.lib.StoredConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -27,13 +29,21 @@ public class SimpleCodeService implements CodeService {
 	
 	@Override
 	public void createCodeBase(String location) throws Exception {
-		String gitlocation = null;
+		String gitlocation = "/tmp/repo";
 		//check to see if the location exists on the filesystem		
-		gitlocation = location.substring(location.lastIndexOf("/")+1,location.lastIndexOf("."));
+//		gitlocation = location.substring(location.lastIndexOf("/")+1,location.lastIndexOf("."));
 		//clean off if exists
-		FileUtils.deleteDirectory(gitlocation);
+//		FileUtils.deleteDirectory(gitlocation);
 		//clone the code
-		Git git = Git.cloneRepository().setURI(location).call();
+		Git git = Git.init().setDirectory(new File("/tmp/repo")).call();
+		StoredConfig config = git.getRepository().getConfig();
+		config.getBoolean("http", null, "sslVerify",false);
+		config.setString("remote", "origin", "url", location);
+		config.setString("remote", "origin", "fetch", "+refs/heads/*:refs/remotes/origin/*");
+		config.save();
+		git.pull().call();
+//		git.checkout().setName("master").call();
+//		Git git = Git.cloneRepository().setURI(location).call();
 		gitlocation = git.getRepository().getDirectory().getAbsolutePath();
 		gitlocation = gitlocation.substring(0, gitlocation.lastIndexOf("/"));						
 		//scan for tests
