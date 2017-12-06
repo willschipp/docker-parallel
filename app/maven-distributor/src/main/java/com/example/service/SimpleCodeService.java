@@ -9,12 +9,14 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import org.codehaus.plexus.util.FileUtils;
+import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.TransportConfigCallback;
 import org.eclipse.jgit.lib.StoredConfig;
+import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.HttpTransport;
 import org.eclipse.jgit.transport.Transport;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.transport.http.HttpConnection;
 import org.eclipse.jgit.transport.http.HttpConnectionFactory;
 import org.eclipse.jgit.transport.http.JDKHttpConnectionFactory;
@@ -59,6 +61,7 @@ public class SimpleCodeService implements CodeService {
 		// clone repository
 //		HttpTransport.setConnectionFactory( preservedConnectionFactory );
 		
+		CredentialsProvider cp = new UsernamePasswordCredentialsProvider("epam_user", "epampassword");
 		
 //		git.pull().call();
 		git.pull().setTransportConfigCallback(new TransportConfigCallback() {
@@ -92,7 +95,7 @@ public class SimpleCodeService implements CodeService {
 		//save
 		codeBaseRepository.save(codeBase);
 		//clean up
-		FileUtils.deleteDirectory(gitlocation);
+		FileUtils.deleteDirectory(new File(location));
 	}
 
 	@Override
