@@ -1,6 +1,8 @@
 package com.example.service;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Proxy;
 import java.net.URL;
@@ -13,6 +15,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.FileUtils;
@@ -33,6 +36,7 @@ import org.eclipse.jgit.transport.http.HttpConnectionFactory;
 import org.eclipse.jgit.transport.http.JDKHttpConnectionFactory;
 import org.eclipse.jgit.util.HttpSupport;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.example.domain.CodeBase;
@@ -45,6 +49,9 @@ import com.example.util.ScannerUtils;
 public class SimpleCodeService implements CodeService {
 
 	private static final Log logger = LogFactory.getLog(SimpleCodeService.class);
+	
+	@Value("${root.directory:/tmp}")
+	private String rootDirectory;
 	
 	@Autowired
 	private CodeBaseRepository codeBaseRepository;
@@ -152,6 +159,62 @@ public class SimpleCodeService implements CodeService {
 
 	}
 
+	@Override
+	public String parseCodeBase(String location) throws Exception {
+		//unzip the location
+		String targetDirectory = location.substring(0,location.lastIndexOf("."));
+		File directory = new File(targetDirectory);
+		if (!directory.exists()) {
+			directory.mkdir();
+		}//end if
+		//unzip the file
+		ZipInputStream zis = new ZipInputStream(new FileInputStream(location));
+		ZipEntry entry = zis.getNextEntry();
+		while (entry != null) {
+			String fileName = entry.getName();
+			File f = new File(directory.getAbsolutePath() + File.separator + fileName);
+			new File(f.getParent()).mkdirs();
+			FileOutputStream fos = new FileOutputStream(f);
+			int i = zis.read();
+			while (i != -1) {
+				fos.write(i);
+				i = zis.read();
+			}//end while
+			fos.flush();
+			fos.close();
+			//create target
+			entry = zis.getNextEntry();
+		}//end while
+		zis.close();
+		String gitlocation = directory.getAbsolutePath();		
+		
+		//run the test scanner on it
+		//scan for tests
+		List<String> names = ScannerUtils.getListOfTestNames(gitlocation);
+		List<CodeTest> tests = new ArrayList<CodeTest>();
+		//loop
+		for (String name : names) {
+			CodeTest codeTest = new CodeTest();
+			codeTest.setName(name);
+			codeTest.setCreatedDate(new Date());
+			//add
+			tests.add(codeTest);
+		}//end for
+		//save
+		codeTestRepository.save(tests);
+		//create codebase
+		CodeBase codeBase = new CodeBase();
+		codeBase.setUrl(location);
+		codeBase.setTests(tests);
+		//save
+		codeBaseRepository.save(codeBase);
+		//clean up
+		FileUtils.deleteDirectory(new File(gitlocation));		
+		
+		return location;
+	}
+	
+	
 
 	private void zipLocation(String input,String output) throws Exception {
 		Path path = Files.createFile(Paths.get(output));
@@ -171,6 +234,9 @@ public class SimpleCodeService implements CodeService {
 				});
 		}
 	}
+	
+	
+	
 	
 	private List<String> getNames(List<CodeTest> tests) {
 		List<String> names = new ArrayList<String>();
@@ -225,4 +291,5 @@ public class SimpleCodeService implements CodeService {
 		    return connection;
 		  }
 		}
+
 }

@@ -42,7 +42,7 @@ public class HostEndpoint {
 	@RequestMapping(value="/file",method=RequestMethod.GET)
 	public ResponseEntity<Resource> getFile(@RequestParam("fileName") String fileName) throws Exception {
 		//get the file
-		Resource file = new PathResource("/tmp/" + fileName);
+		Resource file = new PathResource(fileName);
 		return ResponseEntity.ok()
 				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
 				.contentType(MediaType.APPLICATION_OCTET_STREAM)
