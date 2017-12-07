@@ -33,8 +33,8 @@ public class SimpleFileService implements FileService {
 	public String getFile(String url) throws Exception {
 		String filename = url.substring(url.lastIndexOf("=")+1);
 		
-		System.out.println("url: " + url);
-		System.out.println("filename: " + filename);
+		logger.info("url: " + url);
+		logger.info("filename: " + filename);
 		
 		RestTemplate restTemplate = new RestTemplate();
 

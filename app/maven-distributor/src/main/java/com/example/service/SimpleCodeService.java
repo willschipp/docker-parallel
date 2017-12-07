@@ -21,6 +21,7 @@ import org.apache.commons.logging.LogFactory;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.PullCommand;
 import org.eclipse.jgit.api.TransportConfigCallback;
+import org.eclipse.jgit.lib.EmptyProgressMonitor;
 import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.lib.TextProgressMonitor;
 import org.eclipse.jgit.transport.CredentialsProvider;
@@ -67,7 +68,7 @@ public class SimpleCodeService implements CodeService {
 		HttpTransport.setConnectionFactory( new InsecureHttpConnectionFactory() );
 
 		//setup pull
-		PullCommand pullCommand = git.pull().setProgressMonitor(new TextProgressMonitor()).setTransportConfigCallback(new TransportConfigCallback() {
+		PullCommand pullCommand = git.pull().setProgressMonitor(new DirtyProgressMonitor()).setTransportConfigCallback(new TransportConfigCallback() {
 			@Override
 			public void configure(Transport transport) {
 				((HttpTransport)transport).setConnectionFactory(new InsecureHttpConnectionFactory());
@@ -177,6 +178,37 @@ public class SimpleCodeService implements CodeService {
 			names.add(test.getName());
 		}//end for
 		return names;
+	}
+	
+	
+	class DirtyProgressMonitor extends EmptyProgressMonitor {
+
+		@Override
+		public void beginTask(String title, int totalWork) {
+			System.out.println("started task... " + title);
+			super.beginTask(title, totalWork);
+		}
+
+		@Override
+		public void update(int completed) {
+			System.out.println("update... " + completed);
+			super.update(completed);
+		}
+
+		@Override
+		public void start(int totalTasks) {
+			System.out.println("start called...");
+			super.start(totalTasks);
+		}
+
+		@Override
+		public void endTask() {
+			System.out.println("end task");
+			super.endTask();
+		}
+		
+		
+		
 	}
 
 	class InsecureHttpConnectionFactory implements HttpConnectionFactory {
