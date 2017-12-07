@@ -67,6 +67,8 @@ public class SimpleHostService implements HostService {
 			parameters = "-Dtest=" + parameters;
 		}//end if
 		
+		System.out.println(url);
+		
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		

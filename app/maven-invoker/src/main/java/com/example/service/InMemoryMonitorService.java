@@ -98,7 +98,7 @@ public class InMemoryMonitorService implements MonitorService {
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 			HttpEntity<LinkedMultiValueMap<String,Object>> entity = new HttpEntity<LinkedMultiValueMap<String,Object>>(vmap,headers);
-			logger.info(url + uuid);
+			logger.info(url + "/" + uuid);
 //			ResponseEntity<String> result = restTemplate.exchange(url + "/" + uuid,HttpMethod.POST,entity,String.class);
 			String result = restTemplate.postForObject(url + "/" + uuid, entity, String.class);
 			logger.info(result);

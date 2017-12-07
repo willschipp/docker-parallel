@@ -5,6 +5,8 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -31,6 +33,8 @@ import com.example.service.JobService;
 @RequestMapping("/api/runner")
 public class RunEndpoint {
 
+	private static final Log logger = LogFactory.getLog(RunEndpoint.class);
+	
 	@Autowired
 	private CodeService codeService;
 	
@@ -54,7 +58,7 @@ public class RunEndpoint {
 			@Override
 			public void run() {
 				try {
-					codeService.createCodeBase(gitUrl,username,password);
+					String fileId = codeService.createCodeBase(gitUrl,username,password);
 					//scan for hosts
 					List<Host> hosts = hostService.getAll();
 					if (hosts == null) {
@@ -64,7 +68,7 @@ public class RunEndpoint {
 					List<String> buckets = codeService.getTestBuckets(request.get("git-url"), hosts.size());
 					//send
 					for (int i=0;i<buckets.size();i++) {
-						hostService.run(hosts.get(i), request.get("git-url").toString(), buckets.get(i));
+						hostService.run(hosts.get(i), fileId + ".zip", buckets.get(i));
 					}//end for					
 				}
 				catch (Exception e) {

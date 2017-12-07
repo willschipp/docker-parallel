@@ -4,12 +4,20 @@ import java.io.File;
 import java.io.IOException;
 import java.net.Proxy;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.PullCommand;
 import org.eclipse.jgit.api.TransportConfigCallback;
@@ -35,6 +43,8 @@ import com.example.util.ScannerUtils;
 @Service
 public class SimpleCodeService implements CodeService {
 
+	private static final Log logger = LogFactory.getLog(SimpleCodeService.class);
+	
 	@Autowired
 	private CodeBaseRepository codeBaseRepository;
 
@@ -42,14 +52,11 @@ public class SimpleCodeService implements CodeService {
 	private CodeTestRepository codeTestRepository;
 
 	@Override
-	public void createCodeBase(String location,String username,String password) throws Exception {
+	public String createCodeBase(String location,String username,String password) throws Exception {
+		String uuid = UUID.randomUUID().toString();
 		String gitlocation = "/tmp/repo";
-		//check to see if the location exists on the filesystem
-//		gitlocation = location.substring(location.lastIndexOf("/")+1,location.lastIndexOf("."));
-		//clean off if exists
-//		FileUtils.deleteDirectory(gitlocation);
 		//clone the code
-		Git git = Git.init().setDirectory(new File("/tmp/repo")).call();
+		Git git = Git.init().setDirectory(new File(gitlocation)).call();
 		StoredConfig config = git.getRepository().getConfig();
 		config.getBoolean("http", null, "sslVerify",false);
 		config.setString("remote", "origin", "url", location);
@@ -57,12 +64,9 @@ public class SimpleCodeService implements CodeService {
 		config.save();
 
 		//set the connection factory
-//		HttpConnectionFactory preservedConnectionFactory = HttpTransport.getConnectionFactory();
 		HttpTransport.setConnectionFactory( new InsecureHttpConnectionFactory() );
 
-		// clone repository
-//		HttpTransport.setConnectionFactory( preservedConnectionFactory );
-
+		//setup pull
 		PullCommand pullCommand = git.pull().setProgressMonitor(new TextProgressMonitor()).setTransportConfigCallback(new TransportConfigCallback() {
 			@Override
 			public void configure(Transport transport) {
@@ -76,15 +80,7 @@ public class SimpleCodeService implements CodeService {
 		}//end if
 
 		pullCommand.call();
-//
-//		git.pull().setTransportConfigCallback(new TransportConfigCallback() {
-//			@Override
-//			public void configure(Transport transport) {
-//				((HttpTransport)transport).setConnectionFactory(new InsecureHttpConnectionFactory());
-//			}
-//		}).setCredentialsProvider(credentialsProvider).setProgressMonitor(new TextProgressMonitor()).call();
-//		git.checkout().setName("master").call();
-//		Git git = Git.cloneRepository().setURI(location).call();
+
 		gitlocation = git.getRepository().getDirectory().getAbsolutePath();
 		gitlocation = gitlocation.substring(0, gitlocation.lastIndexOf("/"));
 		//scan for tests
@@ -106,8 +102,12 @@ public class SimpleCodeService implements CodeService {
 		codeBase.setTests(tests);
 		//save
 		codeBaseRepository.save(codeBase);
+		//zip the package
+		zipLocation(gitlocation,"/tmp/" + uuid + ".zip");
 		//clean up
 		FileUtils.deleteDirectory(new File(location));
+		
+		return uuid;
 	}
 
 	@Override
@@ -152,6 +152,25 @@ public class SimpleCodeService implements CodeService {
 	}
 
 
+	private void zipLocation(String input,String output) throws Exception {
+		Path path = Files.createFile(Paths.get(output));
+		try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(path))) {
+			Path sourcePath = Paths.get(input);
+			Files.walk(sourcePath)
+				.filter(p -> !Files.isDirectory(p))
+				.forEach(p -> {
+					ZipEntry zipEntry = new ZipEntry(sourcePath.relativize(p).toString());
+					try {
+						zos.putNextEntry(zipEntry);
+						Files.copy(p, zos);
+						zos.closeEntry();
+					} catch (IOException e) {
+						logger.error(e);
+					}
+				});
+		}
+	}
+	
 	private List<String> getNames(List<CodeTest> tests) {
 		List<String> names = new ArrayList<String>();
 		for (CodeTest test : tests) {

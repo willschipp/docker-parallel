@@ -6,3 +6,6 @@ distributor:
   
 server:
   port: 8080
+  
+root:
+  directory: /tmp/stash

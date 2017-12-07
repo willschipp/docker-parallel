@@ -6,10 +6,16 @@ import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.PathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.domain.Host;
@@ -33,5 +39,13 @@ public class HostEndpoint {
 		return hostService.getAll();
 	}
 	
-	
+	@RequestMapping(value="/file",method=RequestMethod.GET)
+	public ResponseEntity<Resource> getFile(@RequestParam("fileName") String fileName) throws Exception {
+		//get the file
+		Resource file = new PathResource("/tmp/" + fileName);
+		return ResponseEntity.ok()
+				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+				.contentType(MediaType.APPLICATION_OCTET_STREAM)
+				.body(file);				
+	}
 }

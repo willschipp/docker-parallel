@@ -41,7 +41,18 @@
           ],
     "boot_wait":"10s",
     "shutdown_command": "echo 'vagrant' | sudo -S shutdown -P now"
-  }],
+  },
+  {
+      "type":"amazon-ebs",
+      "access_key":"",
+      "secret_key":"",
+      "region":"eu-central-1",
+      "source_ami":"ami-d74be5b8",
+      "instance_type":"t2.micro",
+      "ssh_username":"ec2-user",
+      "ami_name":"base-image {{timestamp}}"
+  }
+  ],
   "provisioners": [
     {
       "execute_command": "echo 'vagrant' | {{.Vars}} sudo -E -S bash '{{.Path}}'",
