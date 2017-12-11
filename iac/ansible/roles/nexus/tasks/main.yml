@@ -1,0 +1,47 @@
+---
+- name: install jdk
+  yum:
+    name: java-1.8.0-openjdk-devel
+    state: installed
+
+- name: make the target directory
+  file:
+    dest: /app
+    state: directory
+
+- name: make the directory
+  file:
+    dest: /app/nexus
+    state: directory
+
+- name: download nexus
+  get_url:
+    url: https://sonatype-download.global.ssl.fastly.net/nexus/3/nexus-3.6.2-01-unix.tar.gz
+    dest: /tmp/nexus-3.6.2-01-unix.tar.gz
+
+- name: extract nexus
+  unarchive:
+    src: /tmp/nexus-3.6.2-01-unix.tar.gz
+    dest: /app/nexus
+
+
+- name: add nexus user
+  user:
+    name: nexus
+
+- name: own by nexus
+  file:
+    path: /app/nexus
+    owner: nexus
+    recurse: yes
+
+- name: symlink service
+  file:
+    src: /app/nexus/bin/nexus
+    dest: /etc/init.d/nexus
+    state: link
+
+- name: activate service
+  service:
+    name: nexus
+    enabled: yes

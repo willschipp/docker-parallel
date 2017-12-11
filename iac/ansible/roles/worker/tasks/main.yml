@@ -13,8 +13,15 @@
 - name: move maven
   shell: mv /usr/local/apache-maven-3.5.2 /usr/local/maven
 
-- name: run maven
-  command: /usr/local/maven/bin/mvn -f /tmp/pom.xml test
+- name: copy settings
+  template:
+    src: settings.j2
+    dest: /root/.m2/settings.xml
+    owner: root
+    group: root
+
+# - name: run maven
+#   command: /usr/local/maven/bin/mvn -f /tmp/pom.xml test
 
 #
 # - name:

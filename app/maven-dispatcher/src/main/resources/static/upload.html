@@ -1,0 +1,57 @@
+<html>
+
+<head>
+<title>Maven Dispatcher - Upload</title>
+<link rel='stylesheet' href='/webjars/bootstrap/css/bootstrap.min.css'>
+</head>
+
+<body>
+	<div class="container">
+		<div class="row">
+			<div class="col-4">
+				<h1 class="display-4">Maven Dispatcher</h1>
+				<ul class="nav flex-column">
+					<li class="nav-item"><a class="nav-link" href="#"
+						id="homeButton">Home</a></li>
+				</ul>
+			</div>
+			<div class="col-8 align-self-center">
+				<form method="post" enctype="multipart/form-data" id="uploadForm" action="/api/runner/file">
+					<div class="form-group">
+						<label for="fileInput">Source Code Zip</label>
+						<input type="file" class="form-control" name="file" id="fileInput"/>
+					</div>
+					<button type="submit" class="btn btn-primary">Submit</button>
+				</form>
+			</div>
+		</div>
+	</div>
+	<script src="/webjars/jquery/jquery.min.js"></script>
+	<script src="/webjars/bootstrap/js/bootstrap.min.js"></script>
+	<script>
+		$('#homeButton').click(function(e) {
+			window.location = "/";
+		});
+
+		$('#uploadForm').submit(function(e) {
+			e.preventDefault();
+			var dt = new FormData();
+			dt.append("file",$('#fileInput')[0].files[0]);
+			
+			$.ajax({
+				url:'/api/runner/file',
+				data:dt,
+				processData:false,
+				contentType:false,
+				type:'POST',
+				success:function(data) {
+					console.log(data);
+					alert('done');
+				}
+			});
+		});
+
+	</script>
+</body>
+
+</html>

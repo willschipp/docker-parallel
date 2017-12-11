@@ -107,7 +107,7 @@ resource "aws_instance" "worker-node" {
     user = "centos"
   }
 
-  ami           = "ami-b0ab23df"
+  ami = "ami-b0ab23df" #ami for the invoker
 
   instance_type = "t2.micro"
 
@@ -118,7 +118,31 @@ resource "aws_instance" "worker-node" {
 
   subnet_id = "${aws_subnet.default.id}"
 
+  provisioner "remote-exec" {
+      inline = [
+        "sudo echo \"10.0.1.2 dispatcher\" >> /etc/hosts",
+      ]
+    }
+
 }
 
+resource "aws_instance" "dispatcher-node" {
+  connection {
+    user = "centos"
+  }
+
+  ami = "ami-7f52da10" #ami for the dispatcher
+
+  instance_type = "t2.micro"
+
+  key_name = "${var.key_name}"
+
+  vpc_security_group_ids = ["${aws_security_group.default.id}"]
+
+  subnet_id = "${aws_subnet.default.id}"
+
+  private_ip = "10.0.1.2"
+
+}
 
 # ami-7f52da10

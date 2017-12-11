@@ -1,6 +1,0 @@
-{
-  "git-url":"https://github.com/willschipp/sample-app.git",
-  "work-dir":"sample-app",
-  "docker-host":"tcp://10.174.1.35:2376",
-  "tag":"new-image"
-}
