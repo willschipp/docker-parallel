@@ -40,10 +40,40 @@
             "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/kickstart.cfg<enter>"
           ],
     "boot_wait":"10s",
-    "shutdown_command": "echo 'vagrant' | sudo -S shutdown -P now",
-    "format":"ova"
-  }],
+    "format":"ova",
+    "shutdown_command": "echo 'vagrant' | sudo -S shutdown -P now"
+  },
+  {
+      "type":"amazon-ebs",
+      "region":"eu-central-1",
+      "source_ami":"ami-7cbc6e13",
+      "instance_type":"t2.micro",
+      "ssh_username":"centos",
+      "ami_name":"base-image {{timestamp}}"
+  }
+  ],
   "provisioners": [
+    {
+      "type":"file",
+      "source":"./resources/pom.xml",
+      "destination":"/tmp/pom.xml"
+    },
+    {
+      "type":"file",
+      "source":"./resources/maven-invoker.jar",
+      "destination":"/tmp/maven-invoker.jar"
+    },
+    {
+      "execute_command": "echo 'centos' | {{.Vars}} sudo -E -S bash '{{.Path}}'",
+      "scripts": [
+        "scripts/sshd.sh",
+        "scripts/ansible_install_aws.sh",
+        "scripts/invoker_mover.sh"
+      ],
+      "type": "shell",
+      "pause_before": "10s",
+      "only":["amazon-ebs"]
+    },
     {
       "execute_command": "echo 'vagrant' | {{.Vars}} sudo -E -S bash '{{.Path}}'",
       "scripts": [
@@ -51,20 +81,12 @@
         "scripts/vagrant_keys.sh",
         "scripts/ansible_install.sh",
         "scripts/virtualbox_guest.sh",
-        "scripts/cleanup.sh"
+        "scripts/cleanup.sh",
+        "scripts/invoker_mover.sh"
       ],
       "type": "shell",
-      "pause_before": "10s"
-    },
-    {
-      "type":"file",
-      "source":"resources/pom.xml",
-      "destination":"/tmp/pom.xml"
-    },
-    {
-      "type":"file",
-      "source":"resources/maven-invoker.jar",
-      "destination":"/home/vagrant/maven-invoker.jar"
+      "pause_before": "10s",
+      "only":["virtualbox-iso"]
     },
     {
       "type":"ansible-local",
@@ -74,6 +96,7 @@
   ],
   "post-processors":[{
       "type":"shell-local",
-      "inline":["mv output-virtualbox-iso/* .","rm -rf output-virtualbox-iso"]
+      "inline":["mv output-virtualbox-iso/* .","rm -rf output-virtualbox-iso"],
+      "only":["virtualbox-iso"]
   }]
 }

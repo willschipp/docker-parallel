@@ -1,0 +1,11 @@
+[Unit]
+Description=App Service
+
+[Service]
+ExecStart=/usr/bin/java -Dserver.port=9000 -jar /usr/local/bin/maven-dispatcher.jar
+User=root
+Group=root
+Type=simple
+Restart=always
+[Install]
+WantedBy=multi-user.target

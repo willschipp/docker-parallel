@@ -2,8 +2,9 @@
 Description=App Service
 
 [Service]
-ExecStart=/usr/bin/java -Dmaven.home=/usr/local/maven -jar /home/vagrant/maven-invoker.jar
-User=vagrant
+ExecStart=/usr/bin/java -Dmaven.home=/usr/local/maven -Dserver.port=8080 -jar /usr/local/bin/maven-invoker.jar
+User=root
+Group=root
 Type=simple
 Restart=always
 [Install]

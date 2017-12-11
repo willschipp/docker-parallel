@@ -2,6 +2,12 @@
 packer_cache
 output-virtualbox-iso
 *.ova
+*.pem
+.terraform*
+*.tfstate*
+*.jar
+*.tar.gz
+
 
 #maven
 .classpath
@@ -12,3 +18,4 @@ target
 
 #app
 sample-app
+node_modules
