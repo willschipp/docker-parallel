@@ -59,11 +59,17 @@ public class SimpleFileService implements FileService {
 		if (!directory.exists()) {
 			directory.mkdir();
 		}//end if
+		String outputLocation = directory.getAbsolutePath();
 		//unzip the file
 		ZipInputStream zis = new ZipInputStream(new FileInputStream(location));
 		ZipEntry entry = zis.getNextEntry();
 		while (entry != null) {
 			String fileName = entry.getName();
+			if (entry.isDirectory()) {
+				Files.createDirectory(Paths.get(directory.getAbsolutePath() + File.separator + fileName));
+				entry = zis.getNextEntry();
+				continue;//go through the loop
+			}//end if		
 			File f = new File(directory.getAbsolutePath() + File.separator + fileName);
 			new File(f.getParent()).mkdirs();
 			FileOutputStream fos = new FileOutputStream(f);
@@ -74,11 +80,16 @@ public class SimpleFileService implements FileService {
 			}//end while
 			fos.flush();
 			fos.close();
+			//check if it's the pom
+			if (fileName.contains("pom.xml")) {
+				//get this path
+				outputLocation = f.getAbsolutePath().substring(0, f.getAbsolutePath().lastIndexOf(File.separator));
+			}//end if
 			//create target
 			entry = zis.getNextEntry();
 		}//end while
 		zis.close();
-		return directory.getAbsolutePath();
+		return outputLocation;
 	}
 
 }

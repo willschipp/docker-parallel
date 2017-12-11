@@ -29,6 +29,7 @@
 	<script src="/webjars/jquery/jquery.min.js"></script>
 	<script src="/webjars/bootstrap/js/bootstrap.min.js"></script>
 	<script>
+	
 		$('#homeButton').click(function(e) {
 			$('#viewName').text('Home');
 			$('#datatable').empty();
@@ -79,8 +80,7 @@
 				method : 'GET',
 				dataType : 'json',
 				success : function(data) {
-					console.log(data);
-/* 					var header = false;
+ 					var header = false;
 					$.each(data,function(k,v) {
 						var headerRow = null;
 						var row = "<tr>";
@@ -94,7 +94,25 @@
 								headerRow += "</th>";
 							}//end if
 							row += "<td>";
-							row += val;
+							if (typeof val == "object") {
+								row += val.address;
+								row += ":";
+								row += val.port;
+							} else if (n == "uuid") {
+								row += "<a href='/api/runner/";
+								row += val;
+								row += "/log'>Download Log</a>";
+							} else if (n == "successful" && val == false) {
+								row += "<strong style='color:red;'>";
+								row += val;
+								row += "</strong>";
+							} else if (n == "successful" && val == true) {
+								row += "<strong style='color:green;'>";
+								row += val;
+								row += "</strong>";								
+							} else {
+								row += val;	
+							}//end if
 							row += "</td>";
 						});
 						if (!header) {
@@ -104,7 +122,7 @@
 						}//end if
 						row += "</tr>";
 						$('#datatable').append(row);
-					}); */
+					});
 				}
 			});			
 		});

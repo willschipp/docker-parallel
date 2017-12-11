@@ -6,7 +6,7 @@
   "builders":[{
     "type": "virtualbox-iso",
     "guest_os_type": "RedHat_64",
-    "iso_url": "./CentOS-7-x86_64-Minimal-1708.iso",
+    "iso_url": "http://ba.mirror.garr.it/mirrors/CentOS/7/isos/x86_64/CentOS-7-x86_64-Minimal-1708.iso",
     "iso_checksum": "bba314624956961a2ea31dd460cd860a77911c1e0a56e4820a12b9c5dad363f5",
     "iso_checksum_type": "sha256",
     "ssh_username": "vagrant",

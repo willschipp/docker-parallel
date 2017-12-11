@@ -1,7 +1,10 @@
 package com.example;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,7 +12,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.http.HttpEntity;
@@ -27,6 +29,9 @@ public class Publisher implements ApplicationListener<ContextRefreshedEvent> {
 	@Value("${distributor.publisher.url}")
 	private String url;
 	
+	@Value("${root.directory}")
+	private String rootDirectory;	
+	
 	@Autowired
 	private ObjectMapper mapper;
 	
@@ -38,14 +43,22 @@ public class Publisher implements ApplicationListener<ContextRefreshedEvent> {
 	
 	@Override
 	public void onApplicationEvent(ContextRefreshedEvent event) {
+
+		//setup the directory
+		try {
+			Files.createDirectory(Paths.get(rootDirectory));
+		} catch (IOException ioe) {
+			logger.error(ioe);
+		}
+		
 		RestTemplate restTemplate = new RestTemplate();
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		
-//		int port = ((TomcatEmbeddedServletContainer)((AnnotationConfigEmbeddedWebApplicationContext)event.getApplicationContext()).getEmbeddedServletContainer()).getPort();
-		
 		try {
+			
+			
 			//create the json object
 			Map<String,String> requestObject = new HashMap<String,String>();
 			requestObject.put("address",InetAddress.getLocalHost().getHostAddress());

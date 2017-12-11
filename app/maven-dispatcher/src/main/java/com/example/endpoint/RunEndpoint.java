@@ -1,5 +1,6 @@
 package com.example.endpoint;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -91,24 +92,24 @@ public class RunEndpoint {
 	@RequestMapping(value="/file",method=RequestMethod.POST)
 	public void runFile(@RequestParam("file") MultipartFile file,HttpServletResponse response) throws Exception {
 		//upload the file to temp
-		String uuid = UUID.randomUUID().toString();
-		uuid = rootDirectory + "/" + uuid + ".zip";
-		Files.copy(file.getInputStream(), Paths.get(uuid));
+//		String uuid = UUID.randomUUID().toString();
+		String filename = UUID.randomUUID().toString() + ".zip";
+		String location = rootDirectory + File.separator + filename;
+		Files.copy(file.getInputStream(), Paths.get(location));
 		//unzip
 		//process
-		uuid = codeService.parseCodeBase(uuid);
-		System.out.println(uuid);
+		location = codeService.parseCodeBase(location);
 		//scan for hosts
 		List<Host> hosts = hostService.getAll();
 		if (hosts == null) {
 			throw new Exception("no hosts");
 		}//end if
 		//partition and send --> url, list of tests
-		List<String> buckets = codeService.getTestBuckets(uuid, hosts.size());
+		List<String> buckets = codeService.getTestBuckets(location, hosts.size());
 		//send
 		for (int i=0;i<buckets.size();i++) {
 			//TODO - remove source directory from the urls passed
-			hostService.run(hosts.get(i), uuid, buckets.get(i));
+			hostService.run(hosts.get(i), filename, buckets.get(i));
 		}//end for					
 		//parse for content
 		response.setStatus(HttpStatus.CREATED.value());

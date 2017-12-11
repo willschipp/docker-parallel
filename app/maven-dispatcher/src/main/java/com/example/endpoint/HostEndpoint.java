@@ -1,11 +1,13 @@
 package com.example.endpoint;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.PathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -28,6 +30,9 @@ public class HostEndpoint {
 	@Autowired
 	private HostService hostService;
 	
+	@Value("${root.directory:/tmp}")
+	private String rootDirectory;	
+	
 	@RequestMapping(method=RequestMethod.POST)
 	public void register(@RequestBody Map<String,Object> request,HttpServletResponse response) throws Exception {
 		hostService.register(request.get("address").toString(), request.get("port").toString());
@@ -42,7 +47,7 @@ public class HostEndpoint {
 	@RequestMapping(value="/file",method=RequestMethod.GET)
 	public ResponseEntity<Resource> getFile(@RequestParam("fileName") String fileName) throws Exception {
 		//get the file
-		Resource file = new PathResource(fileName);
+		Resource file = new PathResource(rootDirectory + File.separator + fileName);
 		return ResponseEntity.ok()
 				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
 				.contentType(MediaType.APPLICATION_OCTET_STREAM)
