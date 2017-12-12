@@ -24,7 +24,6 @@
     src: /tmp/nexus-3.6.2-01-unix.tar.gz
     dest: /app/nexus
 
-
 - name: add nexus user
   user:
     name: nexus
@@ -35,13 +34,15 @@
     owner: nexus
     recurse: yes
 
-- name: symlink service
-  file:
-    src: /app/nexus/bin/nexus
-    dest: /etc/init.d/nexus
-    state: link
+- name: service copy
+  template:
+    src: nexus.j2
+    dest: /etc/systemd/system/nexus.service
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
 
-- name: activate service
-  service:
+- name: enable service
+  systemd:
     name: nexus
     enabled: yes

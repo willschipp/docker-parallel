@@ -8,6 +8,7 @@ output-virtualbox-iso
 *.jar
 *.tar.gz
 *.iso
+*.zip
 
 
 #maven

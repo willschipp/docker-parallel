@@ -49,26 +49,15 @@
       "source_ami":"ami-7cbc6e13",
       "instance_type":"t2.micro",
       "ssh_username":"centos",
-      "ami_name":"base-image {{timestamp}}"
+      "ami_name":"nexus-image {{timestamp}}"
   }
   ],
   "provisioners": [
     {
-      "type":"file",
-      "source":"./resources/pom.xml",
-      "destination":"/tmp/pom.xml"
-    },
-    {
-      "type":"file",
-      "source":"./resources/maven-invoker.jar",
-      "destination":"/tmp/maven-invoker.jar"
-    },
-    {
       "execute_command": "echo 'centos' | {{.Vars}} sudo -E -S bash '{{.Path}}'",
       "scripts": [
         "scripts/sshd.sh",
-        "scripts/ansible_install_aws.sh",
-        "scripts/invoker_mover.sh"
+        "scripts/ansible_install_aws.sh"
       ],
       "type": "shell",
       "pause_before": "10s",

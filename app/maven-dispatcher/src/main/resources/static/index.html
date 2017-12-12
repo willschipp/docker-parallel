@@ -3,13 +3,20 @@
 <head>
 <title>Maven Dispatcher</title>
 <link rel='stylesheet' href='/webjars/bootstrap/css/bootstrap.min.css'>
+<link rel='stylesheet' href='/css/style.css'/>
 </head>
 
 <body>
 	<div class="container">
 		<div class="row">
-			<div class="col-4">
-				<h1 class="display-4">Maven Dispatcher</h1>
+			<div class="col-2 lime-green">
+			</div>
+			<div class="col-10 graphite">
+				<h1 class="display-4 text-right">Maven Dispatcher</h1>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-2">
 				<ul class="nav flex-column">
 					<li class="nav-item"><a class="nav-link" href="#"
 						id="homeButton">Home</a></li>
@@ -17,12 +24,34 @@
 						id="hostButton">Hosts</a></li>
 					<li class="nav-item"><a class="nav-link" href="#"
 						id="jobsButton">Jobs</a></li>
-					<li class="nav-item"><a class="nav-link" href="./upload.html">New Job</a></li>						
+					<li class="nav-item"><a class="nav-link" href="#" id="newJobButton">New Job</a></li>
+					<li class="nav-item"><a class="nav-link" href="#" id="validateJobButton">Validate</a></li>						
 				</ul>
 			</div>
-			<div class="col-8 align-self-center">
-				<h3 class="lead" id="viewName">Home</h3>
-				<table id="datatable" class="table"></table>
+			<div class="col-10 align-self-center">
+				<section id="baseSection">
+					<h3 class="lead" id="viewName">Home</h3>
+					<table id="datatable" class="table"></table>				
+				</section>
+				<section id="uploadSection" style="display:none;">
+					<h3 class="lead">Upload Zip</h3>
+					<form id="uploadForm">
+						<div class="form-group">
+							<input type="file" class="form-control" name="file" id="fileInput"/>
+						</div>
+						<button type="submit" class="btn btn-primary">Submit</button>
+					</form>					
+				</section>
+				<section id="validateSection" style="display:none;">
+					<h3 class="lead">Validate Zip</h3>
+					<form id="validateForm">
+						<div class="form-group">
+							<input type="file" class="form-control" name="file" id="validateFileInput"/>
+						</div>
+						<button type="submit" class="btn btn-primary">Submit</button>
+					</form>				
+					<table id="validatetable" class="table"></table>	
+				</section>				
 			</div>
 		</div>
 	</div>
@@ -30,14 +59,37 @@
 	<script src="/webjars/bootstrap/js/bootstrap.min.js"></script>
 	<script>
 	
+		var names = ["#uploadSection","#validateSection","#baseSection"];
+
+		function hideShow(showName) {
+			for (var i=0;i<names.length;i++) {
+				if (names[i] == showName) {
+					$(showName).show();
+				} else {
+					$(names[i]).hide();
+				}
+			}
+		}		
+		
 		$('#homeButton').click(function(e) {
 			$('#viewName').text('Home');
 			$('#datatable').empty();
+			hideShow('#baseSection');
 		});
+		
+		
+		$('#newJobButton').click(function(e) {
+			hideShow('#uploadSection');
+		});
+		
+		$('#validateJobButton').click(function(e) {
+			hideShow('#validateSection');
+		});		
 
 		$('#hostButton').click(function(e) {
 			$('#viewName').text('Hosts');
 			$('#datatable').empty();
+			hideShow('#baseSection');
 			$.ajax({
 				url : '/api/host',
 				method : 'GET',
@@ -75,6 +127,7 @@
 		$('#jobsButton').click(function(e) {
 			$('#viewName').text('Jobs');
 			$('#datatable').empty();
+			hideShow('#baseSection');
 			$.ajax({
 				url : '/api/runner',
 				method : 'GET',
@@ -126,6 +179,69 @@
 				}
 			});			
 		});
+		
+		$('#uploadForm').submit(function(e) {
+			e.preventDefault();
+			var dt = new FormData();
+			dt.append("file",$('#fileInput')[0].files[0]);
+			
+			$.ajax({
+				url:'/api/runner/file',
+				data:dt,
+				processData:false,
+				contentType:false,
+				type:'POST',
+				success:function(data) {
+					window.location = '/index.html';
+				},
+				error:function(err,data) {
+					alert(err.responseJSON.message);
+				}
+			});
+		});
+		
+		$('#validateForm').submit(function(e) {
+			e.preventDefault();
+			var dt = new FormData();
+			dt.append("file",$('#validateFileInput')[0].files[0]);
+			$.ajax({
+				url:'/api/runner/file/validate',
+				data:dt,
+				processData:false,
+				contentType:false,
+				type:'POST',
+				success:function(data) {
+					console.log(data);
+					$('#buckets').text(data.buckets);
+					var header = false;
+					$.each(data.codebase.tests,function(k,v) {
+						var headerRow = null;
+						var row = "<tr>";
+						if (!header) {
+							headerRow = "<tr>";							
+						}//end if
+						$.each(v,function(n,val){
+							if (!header) {
+								headerRow += "<th>";
+								headerRow += n;
+								headerRow += "</th>";
+							}//end if
+							row += "<td>";
+							row += val;
+							row += "</td>";
+						});
+						if (!header) {
+							headerRow += "</tr>";
+							$('#validatetable').append(headerRow);
+							header = true;
+						}//end if
+						row += "</tr>";
+						$('#validatetable').append(row);
+					});
+				}
+			});
+		});		
+		
 	</script>
 </body>
 

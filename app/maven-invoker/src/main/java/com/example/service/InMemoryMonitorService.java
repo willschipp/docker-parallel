@@ -69,7 +69,6 @@ public class InMemoryMonitorService implements MonitorService {
 	@Override
 	public void update(final String uuid, String log) {
 		map.put(uuid, log);
-		//TODO - zip the log stream and send
 		try {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			BufferedOutputStream bos = new BufferedOutputStream(baos);
@@ -93,15 +92,12 @@ public class InMemoryMonitorService implements MonitorService {
 				};
 			};
 			
-			
 			vmap.add("file", bar);
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 			HttpEntity<LinkedMultiValueMap<String,Object>> entity = new HttpEntity<LinkedMultiValueMap<String,Object>>(vmap,headers);
-			logger.info(url + "/" + uuid);
 //			ResponseEntity<String> result = restTemplate.exchange(url + "/" + uuid,HttpMethod.POST,entity,String.class);
-			String result = restTemplate.postForObject(url + "/" + uuid, entity, String.class);
-			logger.info(result);
+			restTemplate.postForObject(url + "/" + uuid, entity, String.class);
 		}
 		catch (Exception e) {
 			logger.error(e);

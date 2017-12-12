@@ -3,6 +3,7 @@ package com.example.endpoint;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -114,6 +115,26 @@ public class RunEndpoint {
 		//parse for content
 		response.setStatus(HttpStatus.CREATED.value());
 		//signal
+	}
+	
+	@RequestMapping(value="/file/validate",method=RequestMethod.POST)
+	public Map<String,Object> runFileValidate(@RequestParam("file") MultipartFile file) throws Exception {
+		//upload the file to temp
+		Map<String,Object> response = new HashMap<String,Object>();
+		String filename = UUID.randomUUID().toString() + ".zip";
+		String location = rootDirectory + File.separator + filename;
+		Files.copy(file.getInputStream(), Paths.get(location));
+		//unzip
+		//process
+		List<Host> hosts = hostService.getAll();
+		if (hosts == null) {
+			response.put("buckets",codeService.getTestBuckets(location, hosts.size()).size());
+//			throw new Exception("no hosts");
+			logger.error("no hosts");
+		}//end if
+		response.put("codebase", codeService.getCodeBase(location));
+		//return
+		return response;
 	}
 	
 	@RequestMapping(value="/{uuid}",method=RequestMethod.POST)

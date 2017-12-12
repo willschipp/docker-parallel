@@ -22,6 +22,7 @@ resource "aws_route" "internet_access" {
   gateway_id             = "${aws_internet_gateway.default.id}"
 }
 
+# TODO remove public ip map
 # Create a subnet to launch our instances into
 resource "aws_subnet" "default" {
   vpc_id                  = "${aws_vpc.default.id}"
@@ -37,8 +38,8 @@ resource "aws_security_group" "elb" {
 
   # HTTP access from anywhere
   ingress {
-    from_port   = 8080
-    to_port     = 8080
+    from_port   = 9000
+    to_port     = 9000
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -96,7 +97,7 @@ resource "aws_elb" "web" {
   listener {
     instance_port     = 80
     instance_protocol = "http"
-    lb_port           = 8080
+    lb_port           = 9000
     lb_protocol       = "http"
   }
 }
@@ -105,9 +106,10 @@ resource "aws_elb" "web" {
 resource "aws_instance" "worker-node" {
   connection {
     user = "centos"
+    private_key = "${file("${path.module}/siemens-app.pem")}"
   }
 
-  ami = "ami-b0ab23df" #ami for the invoker
+  ami = "ami-a90a82c6" #ami for the invoker
 
   instance_type = "t2.micro"
 
@@ -120,7 +122,8 @@ resource "aws_instance" "worker-node" {
 
   provisioner "remote-exec" {
       inline = [
-        "sudo echo \"10.0.1.2 dispatcher\" >> /etc/hosts",
+        "sudo sh -c 'echo \"10.0.1.10 dispatcher\" >> /etc/hosts'",
+        "sudo sh -c 'echo \"10.0.1.11 maven-cache\" >> /etc/hosts'",
       ]
     }
 
@@ -129,9 +132,10 @@ resource "aws_instance" "worker-node" {
 resource "aws_instance" "dispatcher-node" {
   connection {
     user = "centos"
+    private_key = "${file("${path.module}/siemens-app.pem")}"
   }
 
-  ami = "ami-7f52da10" #ami for the dispatcher
+  ami = "ami-ad0d85c2" #ami for the dispatcher
 
   instance_type = "t2.micro"
 
@@ -141,7 +145,27 @@ resource "aws_instance" "dispatcher-node" {
 
   subnet_id = "${aws_subnet.default.id}"
 
-  private_ip = "10.0.1.2"
+  private_ip = "10.0.1.10"
+
+}
+
+resource "aws_instance" "nexus-node" {
+  connection {
+    user = "centos"
+    private_key = "${file("${path.module}/siemens-app.pem")}"
+  }
+
+  ami = "ami-c375fdac" #ami for the dispatcher
+
+  instance_type = "t2.micro"
+
+  key_name = "${var.key_name}"
+
+  vpc_security_group_ids = ["${aws_security_group.default.id}"]
+
+  subnet_id = "${aws_subnet.default.id}"
+
+  private_ip = "10.0.1.11"
 
 }
 
