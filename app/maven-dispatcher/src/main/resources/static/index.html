@@ -39,6 +39,15 @@
 						<div class="form-group">
 							<input type="file" class="form-control" name="file" id="fileInput"/>
 						</div>
+						<table class="table" id="parameterTable">
+						<tr>
+							<th>Parameter</th>
+							<th><button class="btn btn-primary" id="addParameterFieldButton">Add</button>
+						</tr>
+						<tbody id="parameters">
+						
+						</tbody>
+						</table>
 						<button type="submit" class="btn btn-primary">Submit</button>
 					</form>					
 				</section>
@@ -180,13 +189,43 @@
 			});			
 		});
 		
+		var counter = 0;
+		
+		$('#addParameterFieldButton').click(function(e) {
+			e.preventDefault();
+			
+			var inputField = "<input type='text' id='p" + counter + "' class='form-control' placeholder='Maven Argument Text here...'/>"
+			
+			$('#parameterTable').append("<tr><td colspan='2'>" + inputField + "</td></tr>");
+			
+			counter++;
+		});
+		
 		$('#uploadForm').submit(function(e) {
 			e.preventDefault();
 			var dt = new FormData();
 			dt.append("file",$('#fileInput')[0].files[0]);
 			
+			//build the url
+			var url = '/api/runner/file';
+			
+			var firstParameter = true;
+			console.log($('#parameterTable').find("input"));
+			
+			for (var i=0;i<$('#parameterTable').find("input").length;i++) {
+				if (firstParameter) {
+					url += "?";
+					firstParameter = false;
+				} else {
+					url += "&";
+				}//end if
+				url += $('#parameterTable').find("input")[i].id;
+				url += "=";
+				url += $('#parameterTable').find("input")[i].value;
+			}
+			
 			$.ajax({
-				url:'/api/runner/file',
+				url:url,
 				data:dt,
 				processData:false,
 				contentType:false,

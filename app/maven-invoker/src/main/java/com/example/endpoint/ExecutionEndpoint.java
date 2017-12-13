@@ -24,9 +24,6 @@ public class ExecutionEndpoint {
 	@Autowired
 	private ExecutionService executionService;
 	
-//	@Autowired
-//	private CloneService cloneService;
-	
 	@Autowired
 	private FileService fileService;
 	
@@ -35,8 +32,7 @@ public class ExecutionEndpoint {
 	
 	@RequestMapping(method=RequestMethod.POST)
 	public Map<String,String> run(@RequestBody Map<String,Object> request,HttpServletResponse response) throws Exception {
-		//clone
-//		Map<String,String> variables = cloneService.clone(request.get("url").toString());
+		//get the download
 		String downloadedFile = fileService.getFile(url + "/file?fileName=" + request.get("git-url").toString());
 		String downloadedLocation = fileService.extractFile(downloadedFile);
 		//generate id

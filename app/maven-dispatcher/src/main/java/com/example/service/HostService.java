@@ -13,6 +13,8 @@ public interface HostService {
 	List<Host> getAll();
 	
 	void run(Host host,String location,String parameters) throws Exception;
+	
+	void run(Host host,String location,String parameters,String... options) throws Exception;
 
 	void processLog(String uuid, byte[] bytes);
 	

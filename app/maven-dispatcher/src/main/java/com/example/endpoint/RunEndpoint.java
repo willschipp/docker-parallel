@@ -3,11 +3,15 @@ package com.example.endpoint;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.logging.Log;
@@ -57,6 +61,7 @@ public class RunEndpoint {
 	@Autowired
 	private TaskExecutor taskExecutor;
 	
+	//clone endpoint
 	@RequestMapping(method=RequestMethod.POST)
 	public void run(@RequestBody Map<String,String> request,HttpServletResponse response) throws Exception {
 		final String gitUrl = request.get("git-url").toString();
@@ -90,8 +95,9 @@ public class RunEndpoint {
 		response.setStatus(HttpStatus.CREATED.value());
 	}
 	
+	//file upload endpoint
 	@RequestMapping(value="/file",method=RequestMethod.POST)
-	public void runFile(@RequestParam("file") MultipartFile file,HttpServletResponse response) throws Exception {
+	public void runFile(@RequestParam("file") MultipartFile file,HttpServletRequest request,HttpServletResponse response) throws Exception {
 		//upload the file to temp
 //		String uuid = UUID.randomUUID().toString();
 		String filename = UUID.randomUUID().toString() + ".zip";
@@ -107,16 +113,25 @@ public class RunEndpoint {
 		}//end if
 		//partition and send --> url, list of tests
 		List<String> buckets = codeService.getTestBuckets(location, hosts.size());
+		String[] parameters = null;
+		//check for additional parameters
+		if (!request.getParameterMap().isEmpty()) {
+			Collection<String> values = new ArrayList<String>();
+			for (Entry<String,String[]> entry : request.getParameterMap().entrySet()) {
+				values.add(entry.getValue()[0]);
+			}//end for
+			parameters = values.toArray(new String[values.size()]);
+		}//end if
 		//send
 		for (int i=0;i<buckets.size();i++) {
-			//TODO - remove source directory from the urls passed
-			hostService.run(hosts.get(i), filename, buckets.get(i));
+			hostService.run(hosts.get(i), filename, buckets.get(i),parameters);
 		}//end for					
 		//parse for content
 		response.setStatus(HttpStatus.CREATED.value());
 		//signal
 	}
 	
+	//file validation endpoint
 	@RequestMapping(value="/file/validate",method=RequestMethod.POST)
 	public Map<String,Object> runFileValidate(@RequestParam("file") MultipartFile file) throws Exception {
 		//upload the file to temp

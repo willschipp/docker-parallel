@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.task.TaskExecutor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -58,6 +57,11 @@ public class SimpleHostService implements HostService {
 	@Override
 	@Async
 	public void run(Host host, String location, String parameters) throws Exception {
+		run(host,location,parameters,new String[0]);
+	}
+	
+	@Override
+	public void run(Host host, String location, String parameters, String... options) throws Exception {
 		//create the url
 		String url = "http://" + host.getAddress() + ":" + host.getPort() + "/api/run";
 		//init
@@ -67,27 +71,37 @@ public class SimpleHostService implements HostService {
 			parameters = "-Dtest=" + parameters;
 		}//end if
 		
-		System.out.println(url);
-		
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
+		
+		//build the options
+		StringBuffer buffer = new StringBuffer();
+		for (String option : options) {
+			buffer.append(" ").append(option);
+		}//end for
 		
 		//create the json object
 		Map<String,String> requestObject = new HashMap<String,String>();
 		requestObject.put("git-url",location);
-		requestObject.put("options",parameters);
+		requestObject.put("options",parameters + buffer.toString());
+		
+		String json = mapper.writeValueAsString(requestObject);
+		
+		System.out.println(json);
+		
 		//send
-		HttpEntity<String> entity = new HttpEntity<String>(mapper.writeValueAsString(requestObject),headers);
+		HttpEntity<String> entity = new HttpEntity<String>(json,headers);
 		ResponseEntity<Map> response = restTemplate.postForEntity(new URI(url), entity, Map.class);
 		//save
-		jobService.createJobInstance(host, response.getBody().get("uuid").toString());
-		
-	}
+		jobService.createJobInstance(host, response.getBody().get("uuid").toString());		
+	}	
 
 	@Override
 	public void processLog(String uuid, byte[] bytes) {
 		//byte array will be a zip
 		jobService.updateLog(uuid, bytes);
 	}
+
+
 
 }
