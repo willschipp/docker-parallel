@@ -16,7 +16,8 @@
 
 - name: download nexus
   get_url:
-    url: https://sonatype-download.global.ssl.fastly.net/nexus/3/nexus-3.6.2-01-unix.tar.gz
+    # url: https://sonatype-download.global.ssl.fastly.net/nexus/3/nexus-3.6.2-01-unix.tar.gz
+    url: http://192.168.56.101/nexus-3.6.2-01-unix.tar.gz
     dest: /tmp/nexus-3.6.2-01-unix.tar.gz
 
 - name: extract nexus

@@ -29,34 +29,64 @@
 				</ul>
 			</div>
 			<div class="col-10 align-self-center">
+			
+			
+				<section id="spinner" style="display:none;">
+					<button class="btn btn-sm btn-warning">Loading...</button>
+				</section>
+				
+				
 				<section id="baseSection">
 					<h3 class="lead" id="viewName">Home</h3>
 					<table id="datatable" class="table"></table>				
 				</section>
+				
+				
 				<section id="uploadSection" style="display:none;">
 					<h3 class="lead">Upload Zip</h3>
 					<form id="uploadForm">
 						<div class="form-group">
-							<input type="file" class="form-control" name="file" id="fileInput"/>
+							<input type="file" class="form-control-file" name="file" id="fileInput"/>
 						</div>
-						<table class="table" id="parameterTable">
-						<tr>
-							<th>Parameter</th>
-							<th><button class="btn btn-primary" id="addParameterFieldButton">Add</button>
-						</tr>
-						<tbody id="parameters">
+						<div class="form-group">
+							<label class="form-check-label">
+								<input type="checkbox" class="form-check-input" name="uploadCucumber" id="uploadCucumber"/>
+								Contains Cucumber Features
+							</label>
+							
+						</div>
 						
-						</tbody>
-						</table>
+						
+						<div class="form-group">
+							<input type="text" class="form-control" name="cucumberTag" id="cucumberTag" placeholder="Cucumber tag..."/>
+						</div>					
+						<hr/>	
+						<div class="form-group">
+							<h4 class="lead">Parameters <button class="btn btn-primary" id="addParameterFieldButton">Add</button></h4>																
+							<table class="table" id="parameterTable">
+							<tbody id="parameters">
+							
+							</tbody>
+							</table>
+						</div>
+						<hr/>	
 						<button type="submit" class="btn btn-primary">Submit</button>
 					</form>					
 				</section>
+				
+				
 				<section id="validateSection" style="display:none;">
 					<h3 class="lead">Validate Zip</h3>
 					<form id="validateForm">
 						<div class="form-group">
 							<input type="file" class="form-control" name="file" id="validateFileInput"/>
 						</div>
+						<div class="form-group">
+							<label for="validateCucumber">
+								<input type="checkbox" class="form-check-input" name="validateCucumber" id="validateCucumber"/>
+								Contains Cucumber Features
+							</label>
+						</div>						
 						<button type="submit" class="btn btn-primary">Submit</button>
 					</form>				
 					<table id="validatetable" class="table"></table>	
@@ -190,14 +220,16 @@
 		});
 		
 		var counter = 0;
+		var isCucumber = false;
+		
+		$('#uploadCucumber').click(function() {
+			isCucumber = this.checked;
+		});
 		
 		$('#addParameterFieldButton').click(function(e) {
 			e.preventDefault();
-			
-			var inputField = "<input type='text' id='p" + counter + "' class='form-control' placeholder='Maven Argument Text here...'/>"
-			
+			var inputField = "<input type='text' id='parameter" + counter + "' class='form-control' placeholder='Maven Argument Text here...'/>";
 			$('#parameterTable').append("<tr><td colspan='2'>" + inputField + "</td></tr>");
-			
 			counter++;
 		});
 		
@@ -222,7 +254,30 @@
 				url += $('#parameterTable').find("input")[i].id;
 				url += "=";
 				url += $('#parameterTable').find("input")[i].value;
-			}
+			}//end for
+			
+			
+			if (!firstParameter) {
+				url += "&"
+			} else {
+				url += "?";
+			}//end if
+			
+			url += "cucumber=";
+			url += isCucumber;
+			
+			
+			console.log($('#cucumberTag').val());
+			
+			if ($('#cucumberTag').val().length > 0) {
+				if (!firstParameter) {
+					url += "&"
+				} else {
+					url += "?";
+				}//end if			
+				url += "tag=";
+				url += $('#cucumberTag').val();
+			}//end if
 			
 			$.ajax({
 				url:url,
@@ -239,12 +294,26 @@
 			});
 		});
 		
+		/* var isCucumber = false; */
+		
+		$('#validateCucumber').click(function() {
+			isCucumber = this.checked;
+		});
+		
 		$('#validateForm').submit(function(e) {
 			e.preventDefault();
 			var dt = new FormData();
 			dt.append("file",$('#validateFileInput')[0].files[0]);
+			
+			var url = '/api/runner/file/validate'; 
+			if (isCucumber) {
+				url += "?cucumber=true";
+			}//end if
+			
+			$('#spinner').show();
+			
 			$.ajax({
-				url:'/api/runner/file/validate',
+				url:url,
 				data:dt,
 				processData:false,
 				contentType:false,
@@ -277,8 +346,11 @@
 						row += "</tr>";
 						$('#validatetable').append(row);
 					});
+					$('#spinner').hide();
 				}
 			});
+			
+			isCucumber = false;//reset
 		});		
 		
 	</script>

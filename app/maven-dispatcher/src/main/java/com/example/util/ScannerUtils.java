@@ -1,5 +1,8 @@
 package com.example.util;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -66,10 +69,61 @@ public class ScannerUtils {
 		}//end for
 		return builder.toString();
 	}
+	
+	public static String listAsStringFeatures(String... names) throws Exception {
+		StringBuilder builder = new StringBuilder();
+		for (String name :names) {
+			if (builder.length() > 0) {
+				builder.append(" ");
+			}//end if
+			builder.append(name);
+		}//end for
+		return builder.toString();
+	}	
 
 	private static String cleanUpName(String name) throws Exception {
 		return name.substring(0, name.lastIndexOf("."));
 	}
 	
-	
+	private static String getCucumberString(String feature) throws Exception {
+		return "-n \"" + feature + "\"";
+	}
+
+	public static List<String> getFeatures(String location,String tag) throws Exception {
+		List<String> features = new ArrayList<String>();
+		//open up the location
+		//crawl for *.feature files
+		List<Path> paths = Files.walk(Paths.get(location))
+				.filter(Files::isRegularFile)
+				.filter(value -> value.toUri().toString().contains(".feature"))
+				.collect(Collectors.toList());
+		//for each *.feature file, pull all the "scenarios"
+		for (Path path : paths) {
+			//read the file
+			BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path.toFile())));
+			String line = reader.readLine();
+			boolean nextLine = false;
+			while (line != null) {
+				if (tag != null && line.contains(tag)) {
+					//now we need the NEXT line too
+					nextLine = true;
+				}//end if
+				if (tag != null && nextLine == true && line.contains("Scenario")) {
+					//gotcha
+					features.add(getCucumberString(line.substring(line.lastIndexOf(":")+2)));
+					nextLine = false;//reset
+				} else if (tag == null && line.contains("Scenario")) {
+					features.add(getCucumberString(line.substring(line.lastIndexOf(":")+2)));
+				}//end if
+
+				line = reader.readLine();
+			}//end while
+			reader.close();
+		}//end for
+		//filter by tags
+
+		return features;
+	}
+
+
 }

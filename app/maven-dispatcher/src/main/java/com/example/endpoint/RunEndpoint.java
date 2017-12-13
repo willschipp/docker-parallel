@@ -87,7 +87,7 @@ public class RunEndpoint {
 					}//end for					
 				}
 				catch (Exception e) {
-					//TODO manager
+					logger.error(e);
 				}
 			}
 			
@@ -97,33 +97,55 @@ public class RunEndpoint {
 	
 	//file upload endpoint
 	@RequestMapping(value="/file",method=RequestMethod.POST)
-	public void runFile(@RequestParam("file") MultipartFile file,HttpServletRequest request,HttpServletResponse response) throws Exception {
+	public void runFile(@RequestParam("file") MultipartFile file,@RequestParam("cucumber") boolean cucumber,@RequestParam(value="tag",required=false) String tag,HttpServletRequest request,HttpServletResponse response) throws Exception {
 		//upload the file to temp
-//		String uuid = UUID.randomUUID().toString();
 		String filename = UUID.randomUUID().toString() + ".zip";
 		String location = rootDirectory + File.separator + filename;
 		Files.copy(file.getInputStream(), Paths.get(location));
 		//unzip
 		//process
-		location = codeService.parseCodeBase(location);
+		location = codeService.parseCodeBase(location,cucumber,tag);
 		//scan for hosts
 		List<Host> hosts = hostService.getAll();
 		if (hosts == null) {
 			throw new Exception("no hosts");
 		}//end if
 		//partition and send --> url, list of tests
-		List<String> buckets = codeService.getTestBuckets(location, hosts.size());
+		List<String> buckets = null;
+		if (cucumber) {
+			buckets = codeService.getFeatureBuckets(location, hosts.size());
+		} else {
+			buckets = codeService.getTestBuckets(location, hosts.size());
+		}//end if
+		
 		String[] parameters = null;
+		Collection<String> values = new ArrayList<String>();
 		//check for additional parameters
 		if (!request.getParameterMap().isEmpty()) {
-			Collection<String> values = new ArrayList<String>();
 			for (Entry<String,String[]> entry : request.getParameterMap().entrySet()) {
-				values.add(entry.getValue()[0]);
+				if (entry.getKey().contains("parameter")) {
+					values.add(entry.getValue()[0]);
+				}//end if
 			}//end for
-			parameters = values.toArray(new String[values.size()]);
 		}//end if
+		
 		//send
 		for (int i=0;i<buckets.size();i++) {
+
+			if (cucumber) {
+				//build the cucumber parameters
+				StringBuilder cucumberParameter = new StringBuilder("-Dcucumber.options=\"");
+				if (tag != null) {
+					cucumberParameter.append("--tags ").append(tag).append(" ");
+				}//end if
+				cucumberParameter.append(buckets.get(i));
+				cucumberParameter.append("\"");
+				//add
+				values.add(cucumberParameter.toString());
+			}//end if			
+			
+			parameters = values.toArray(new String[values.size()]);
+			//execute
 			hostService.run(hosts.get(i), filename, buckets.get(i),parameters);
 		}//end for					
 		//parse for content
@@ -133,13 +155,14 @@ public class RunEndpoint {
 	
 	//file validation endpoint
 	@RequestMapping(value="/file/validate",method=RequestMethod.POST)
-	public Map<String,Object> runFileValidate(@RequestParam("file") MultipartFile file) throws Exception {
+	public Map<String,Object> runFileValidate(@RequestParam("file") MultipartFile file,@RequestParam(value="cucumber",required=false) boolean cucumber) throws Exception {
 		//upload the file to temp
 		Map<String,Object> response = new HashMap<String,Object>();
 		String filename = UUID.randomUUID().toString() + ".zip";
 		String location = rootDirectory + File.separator + filename;
 		Files.copy(file.getInputStream(), Paths.get(location));
 		//unzip
+		
 		//process
 		List<Host> hosts = hostService.getAll();
 		if (hosts == null) {
@@ -147,7 +170,12 @@ public class RunEndpoint {
 //			throw new Exception("no hosts");
 			logger.error("no hosts");
 		}//end if
-		response.put("codebase", codeService.getCodeBase(location));
+		if (cucumber) {
+			response.put("codebase", codeService.getCodeBase(location,true));
+		} else {
+			response.put("codebase", codeService.getCodeBase(location));
+		}//end if
+		
 		//return
 		return response;
 	}

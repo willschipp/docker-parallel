@@ -68,10 +68,11 @@
       "scripts": [
         "scripts/sshd.sh",
         "scripts/vagrant_keys.sh",
+        "scripts/install_local_repo.sh",
         "scripts/ansible_install.sh",
         "scripts/virtualbox_guest.sh",
-        "scripts/cleanup.sh",
-        "scripts/invoker_mover.sh"
+        "scripts/file_limits.sh",
+        "scripts/cleanup.sh"
       ],
       "type": "shell",
       "pause_before": "10s",

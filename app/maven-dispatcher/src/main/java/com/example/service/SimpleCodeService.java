@@ -155,11 +155,50 @@ public class SimpleCodeService implements CodeService {
 			//return
 			return buckets;
 		}//end if
-
 	}
+	
+	@Override
+	public List<String> getFeatureBuckets(String location, int hostCount) throws Exception {
+		if (hostCount <= 0) {
+			throw new Exception("no hosts");
+		}//end if
+		//retrieve the code base
+		CodeBase codeBase = codeBaseRepository.findOne(location);
+		if (codeBase == null) {
+			throw new Exception("no known code base");
+		}//end if
+		//get the tests
+		List<CodeTest> tests = codeBase.getTests();
+		//check
+		if (hostCount == 1) {
+			List<String> names = getNames(tests);
+			//flatten
+			String name = ScannerUtils.listAsStringFeatures(names.toArray(new String[names.size()]));
+			return Arrays.asList(name);
+		} else {
+			List<String> buckets = new ArrayList<String>();
+			//split
+			int bucketSize = (int) Math.ceil((double)tests.size() / hostCount);
+			int position = 0;
+			for (int j=0;j<hostCount;j++) {
+				List<String> nameCollection = new ArrayList<String>();
+				for (int i=position;i<(position + bucketSize);i++) {
+					if (i < tests.size()) {
+						nameCollection.add(tests.get(i).getName());
+					}//end if
+				}//end for
+				//add
+				buckets.add(ScannerUtils.listAsStringFeatures(nameCollection.toArray(new String[nameCollection.size()])));
+				//increment position
+				position += bucketSize;
+			}//end for
+			//return
+			return buckets;
+		}//end if
+	}	
 
 	@Override
-	public String parseCodeBase(String location) throws Exception {
+	public String parseCodeBase(String location,boolean cucumber,String tag) throws Exception {
 		//unzip the location
 		String targetDirectory = location.substring(0,location.lastIndexOf("."));
 		File directory = new File(targetDirectory);
@@ -176,7 +215,6 @@ public class SimpleCodeService implements CodeService {
 				entry = zis.getNextEntry();
 				continue;//go through the loop
 			}//end if
-			System.out.println(fileName);
 			File f = new File(directory.getAbsolutePath() + File.separator + fileName);
 			new File(f.getParent()).mkdirs();
 			FileOutputStream fos = new FileOutputStream(f);
@@ -195,7 +233,12 @@ public class SimpleCodeService implements CodeService {
 		
 		//run the test scanner on it
 		//scan for tests
-		List<String> names = ScannerUtils.getListOfTestNames(gitlocation);
+		List<String> names = null;
+		if (cucumber) {
+			names = ScannerUtils.getFeatures(gitlocation, tag);//TODO -- set tag
+		} else {
+			names = ScannerUtils.getListOfTestNames(gitlocation);
+		}//end if
 		List<CodeTest> tests = new ArrayList<CodeTest>();
 		//loop
 		for (String name : names) {
@@ -258,6 +301,67 @@ public class SimpleCodeService implements CodeService {
 		//run the test scanner on it
 		//scan for tests
 		List<String> names = ScannerUtils.getListOfTestNames(gitlocation);
+		List<CodeTest> tests = new ArrayList<CodeTest>();
+		//loop
+		for (String name : names) {
+			CodeTest codeTest = new CodeTest();
+			codeTest.setName(name);
+			codeTest.setCreatedDate(new Date());
+			//add
+			tests.add(codeTest);
+		}//end for
+		//save
+		codeTestRepository.save(tests);
+		//create codebase
+		CodeBase codeBase = new CodeBase();
+		codeBase.setUrl(location);
+		codeBase.setTests(tests);
+		//save
+		codeBase = codeBaseRepository.save(codeBase);
+		//clean up
+		FileUtils.deleteDirectory(new File(gitlocation));		
+		//return
+		return codeBase;
+	}	
+	
+	
+	@Override
+	public CodeBase getCodeBase(String location, boolean cucumber) throws Exception {
+		//unzip the location
+		String targetDirectory = location.substring(0,location.lastIndexOf("."));
+		File directory = new File(targetDirectory);
+		if (!directory.exists()) {
+			directory.mkdir();
+		}//end if
+		//unzip the file
+		ZipInputStream zis = new ZipInputStream(new FileInputStream(location));
+		ZipEntry entry = zis.getNextEntry();
+		while (entry != null) {
+			String fileName = entry.getName();
+			if (entry.isDirectory()) {
+				Files.createDirectory(Paths.get(directory.getAbsolutePath() + File.separator + fileName));
+				entry = zis.getNextEntry();
+				continue;//go through the loop
+			}//end if
+			File f = new File(directory.getAbsolutePath() + File.separator + fileName);
+			new File(f.getParent()).mkdirs();
+			FileOutputStream fos = new FileOutputStream(f);
+			int i = zis.read();
+			while (i != -1) {
+				fos.write(i);
+				i = zis.read();
+			}//end while
+			fos.flush();
+			fos.close();
+			//create target
+			entry = zis.getNextEntry();
+		}//end while
+		zis.close();
+		String gitlocation = directory.getAbsolutePath();		
+		
+		//run the test scanner on it
+		//scan for tests
+		List<String> names = ScannerUtils.getFeatures(gitlocation,null);
 		List<CodeTest> tests = new ArrayList<CodeTest>();
 		//loop
 		for (String name : names) {
@@ -356,6 +460,8 @@ public class SimpleCodeService implements CodeService {
 		    return connection;
 		  }
 		}
+
+
 
 
 }
