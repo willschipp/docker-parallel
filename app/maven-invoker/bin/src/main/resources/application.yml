@@ -1,0 +1,11 @@
+distributor:
+  publisher:
+    url: http://dispatcher:9000/api/host
+  runner:
+    url: http://dispatcher:9000/api/runner
+
+server:
+  port: 8080
+
+root:
+  directory: /tmp/stash

@@ -1,8 +1,10 @@
 package com.example.service;
 
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
-import java.util.UUID;
+import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -15,6 +17,8 @@ import org.apache.maven.shared.invoker.Invoker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
+
 
 @Service
 public class MavenExecutionService implements ExecutionService {
@@ -34,11 +38,17 @@ public class MavenExecutionService implements ExecutionService {
 //			Git git = Git.cloneRepository().setURI(location).call();
 //			gitlocation = git.getRepository().getDirectory().getAbsolutePath();
 //			gitlocation = gitlocation.substring(0, gitlocation.lastIndexOf("/"));				
-			//invoke pom
+			//inStream<T>om
 		
-			
+		
+			//TODO --find the pom
+			Stream<Path> matches = Files.find(Paths.get(location), 10, (path,basicFileAttributes) -> String.valueOf(path).endsWith(".xml"));
+			matches.map(path -> path.toAbsolutePath()).forEach(System.out::println);
+		
+		
 			InvocationRequest request = new DefaultInvocationRequest();
-			request.setPomFile(new File(location + "/pom.xml"));
+//			request.setPomFile(new File(location + "/pom.xml"));
+//			request.setBaseDirectory(new File(location));
 			request.setGoals(Collections.singletonList("test"));
 			request.setMavenOpts(options);
 			
