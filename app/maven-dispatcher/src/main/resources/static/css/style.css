@@ -11,6 +11,16 @@
 	font-family:sans-serif;
 }
 
+.sharp-blue {
+	background-color:#39C2D7;
+	color:white;
+	font-family:sans-serif;
+}
+
+a {
+	color:black;
+}
+
 .glyphicon-refresh-animate {
     -animation: spin .7s infinite linear;
     -webkit-animation: spin2 .7s infinite linear;

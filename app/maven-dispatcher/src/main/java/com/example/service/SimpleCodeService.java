@@ -199,12 +199,83 @@ public class SimpleCodeService implements CodeService {
 
 	@Override
 	public String parseCodeBase(String location,boolean cucumber,String tag) throws Exception {
+		if (cucumber) {
+			return parseCodeBaseCucumber(location,cucumber,tag);
+		} else {
+			//unzip the location
+			String targetDirectory = location.substring(0,location.lastIndexOf("."));
+			File directory = new File(targetDirectory);
+			if (!directory.exists()) {
+				directory.mkdir();
+			}//end if
+			logger.info("starting to unzip...");
+			//unzip the file
+			ZipInputStream zis = new ZipInputStream(new FileInputStream(location));
+			ZipEntry entry = zis.getNextEntry();
+			while (entry != null) {
+				String fileName = entry.getName();
+				if (entry.isDirectory()) {
+					Files.createDirectory(Paths.get(directory.getAbsolutePath() + File.separator + fileName));
+					entry = zis.getNextEntry();
+					continue;//go through the loop
+				}//end if
+				File f = new File(directory.getAbsolutePath() + File.separator + fileName);
+				new File(f.getParent()).mkdirs();
+				FileOutputStream fos = new FileOutputStream(f);
+				int i = zis.read();
+				while (i != -1) {
+					fos.write(i);
+					i = zis.read();
+				}//end while
+				fos.flush();
+				fos.close();
+				//create target
+				entry = zis.getNextEntry();
+			}//end while
+			zis.close();
+			String gitlocation = directory.getAbsolutePath();		
+			logger.info("...completed unzip. Starting to get names...");
+			//run the test scanner on it
+			//scan for tests
+			List<String> names = null;
+			if (cucumber) {
+				names = ScannerUtils.getFeatures(gitlocation, tag);//TODO -- set tag
+			} else {
+				names = ScannerUtils.getListOfTestNames(gitlocation);
+			}//end if
+			List<CodeTest> tests = new ArrayList<CodeTest>();
+			//loop
+			for (String name : names) {
+				CodeTest codeTest = new CodeTest();
+				codeTest.setName(name);
+				codeTest.setCreatedDate(new Date());
+				//add
+				tests.add(codeTest);
+			}//end for
+			//save
+			codeTestRepository.save(tests);
+			//create codebase
+			CodeBase codeBase = new CodeBase();
+			codeBase.setUrl(location);
+			codeBase.setTests(tests);
+			//save
+			codeBaseRepository.save(codeBase);
+			logger.info("...completed names. Starting to clean up...");
+			//clean up
+			FileUtils.deleteDirectory(new File(gitlocation));		
+			logger.info("...completed clean up.");
+			return location;
+		}
+	}
+	
+	public String parseCodeBaseCucumber(String location,boolean cucumber,String tag) throws Exception {
 		//unzip the location
 		String targetDirectory = location.substring(0,location.lastIndexOf("."));
 		File directory = new File(targetDirectory);
 		if (!directory.exists()) {
 			directory.mkdir();
 		}//end if
+		logger.info("starting to unzip...");
 		//unzip the file
 		ZipInputStream zis = new ZipInputStream(new FileInputStream(location));
 		ZipEntry entry = zis.getNextEntry();
@@ -215,6 +286,11 @@ public class SimpleCodeService implements CodeService {
 				entry = zis.getNextEntry();
 				continue;//go through the loop
 			}//end if
+			if (!fileName.contains("feature")) {
+				entry = zis.getNextEntry();
+				continue;//go through the loop				
+			}//end if
+			//process
 			File f = new File(directory.getAbsolutePath() + File.separator + fileName);
 			new File(f.getParent()).mkdirs();
 			FileOutputStream fos = new FileOutputStream(f);
@@ -230,7 +306,7 @@ public class SimpleCodeService implements CodeService {
 		}//end while
 		zis.close();
 		String gitlocation = directory.getAbsolutePath();		
-		
+		logger.info("...completed unzip. Starting to get names...");
 		//run the test scanner on it
 		//scan for tests
 		List<String> names = null;
@@ -256,11 +332,12 @@ public class SimpleCodeService implements CodeService {
 		codeBase.setTests(tests);
 		//save
 		codeBaseRepository.save(codeBase);
+		logger.info("...completed names. Starting to clean up...");
 		//clean up
 		FileUtils.deleteDirectory(new File(gitlocation));		
-		
+		logger.info("...completed clean up.");
 		return location;
-	}
+	}	
 	
 
 	@Override

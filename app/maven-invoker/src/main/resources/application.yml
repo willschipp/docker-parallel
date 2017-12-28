@@ -9,3 +9,7 @@ server:
 
 root:
   directory: /tmp/stash
+
+logging:
+  level:
+    org.springframework: debug

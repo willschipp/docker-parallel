@@ -3,11 +3,12 @@ package com.example.service;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -38,7 +39,10 @@ public class SimpleFileService implements FileService {
 		
 		RestTemplate restTemplate = new RestTemplate();
 
-		RequestCallback requestCallBack = request -> request.getHeaders().setAccept(Arrays.asList(MediaType.APPLICATION_OCTET_STREAM,MediaType.ALL));
+		RequestCallback requestCallBack = request -> {
+			request.getHeaders().setAccept(Arrays.asList(MediaType.ALL));
+			request.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+		};
 
 		ResponseExtractor<Void> responseExtractor = response -> {
 			Path path = Paths.get(rootDirectory + "/" + filename);	
@@ -46,7 +50,18 @@ public class SimpleFileService implements FileService {
 			return null;
 		};
 		
-		restTemplate.execute(URI.create(url),HttpMethod.GET,requestCallBack,responseExtractor);
+		
+//		restTemplate.execute(URI.create(url),HttpMethod.GET,requestCallBack,responseExtractor);
+		Map<String,String> urlVariables = new HashMap<String,String>();
+		urlVariables.put("fileName",filename);
+		
+		String sendUrl = url.substring(0, url.lastIndexOf("?"));
+		sendUrl += "/{fileName}";
+		
+		
+		logger.info("url: " + sendUrl);
+		
+		restTemplate.execute(sendUrl, HttpMethod.GET, requestCallBack, responseExtractor,urlVariables);
 		
 		return rootDirectory + "/" + filename;
 	}

@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.domain.Host;
 import com.example.domain.JobInstance;
+import com.example.domain.JobRequest;
+import com.example.domain.JobRequestRepository;
 import com.example.service.CodeService;
 import com.example.service.HostService;
 import com.example.service.JobService;
@@ -44,7 +47,6 @@ import com.example.service.JobService;
 public class RunEndpoint {
 
 	private static final Log logger = LogFactory.getLog(RunEndpoint.class);
-	
 	
 	@Value("${root.directory:/tmp}")
 	private String rootDirectory;
@@ -57,6 +59,9 @@ public class RunEndpoint {
 	
 	@Autowired
 	private JobService jobService;
+	
+	@Autowired
+	private JobRequestRepository jobRequestRepository;
 	
 	@Autowired
 	private TaskExecutor taskExecutor;
@@ -98,56 +103,81 @@ public class RunEndpoint {
 	//file upload endpoint
 	@RequestMapping(value="/file",method=RequestMethod.POST)
 	public void runFile(@RequestParam("file") MultipartFile file,@RequestParam("cucumber") boolean cucumber,@RequestParam(value="tag",required=false) String tag,HttpServletRequest request,HttpServletResponse response) throws Exception {
+		//generate id
+		String id = UUID.randomUUID().toString();
+		JobRequest jobRequest = new JobRequest();
+		jobRequest.setId(id);
+		jobRequest.setUpdatedDate(new Date());
+		//save
+		jobRequestRepository.save(jobRequest);
 		//upload the file to temp
-		String filename = UUID.randomUUID().toString() + ".zip";
+		String filename = jobRequest.getId() + ".zip";
 		String location = rootDirectory + File.separator + filename;
+		logger.info("file received.  Starting to copy...");
 		Files.copy(file.getInputStream(), Paths.get(location));
-		//unzip
-		//process
-		location = codeService.parseCodeBase(location,cucumber,tag);
-		//scan for hosts
-		List<Host> hosts = hostService.getAll();
-		if (hosts == null) {
-			throw new Exception("no hosts");
-		}//end if
-		//partition and send --> url, list of tests
-		List<String> buckets = null;
-		if (cucumber) {
-			buckets = codeService.getFeatureBuckets(location, hosts.size());
-		} else {
-			buckets = codeService.getTestBuckets(location, hosts.size());
-		}//end if
-		
-		String[] parameters = null;
-		Collection<String> values = new ArrayList<String>();
-		//check for additional parameters
-		if (!request.getParameterMap().isEmpty()) {
-			for (Entry<String,String[]> entry : request.getParameterMap().entrySet()) {
-				if (entry.getKey().contains("parameter")) {
-					values.add(entry.getValue()[0]);
-				}//end if
-			}//end for
-		}//end if
-		
-		//send
-		for (int i=0;i<buckets.size();i++) {
+		//now do the rest
+		taskExecutor.execute(new Runnable() {
 
-			if (cucumber) {
-				//build the cucumber parameters
-				StringBuilder cucumberParameter = new StringBuilder("-Dcucumber.options=\"");
-				if (tag != null) {
-					cucumberParameter.append("--tags ").append(tag).append(" ");
-				}//end if
-				cucumberParameter.append(buckets.get(i));
-				cucumberParameter.append("\"");
-				//add
-				values.add(cucumberParameter.toString());
-			}//end if			
+			@Override
+			public void run() {
+				try {
+					logger.info("... copy completed.  Starting to process...");
+					//unzip
+					//process
+					codeService.parseCodeBase(location,cucumber,tag);
+					logger.info("... process completed.  Starting to search for hosts...");
+					//scan for hosts
+					List<Host> hosts = hostService.getAll();
+					if (hosts == null) {
+						throw new Exception("no hosts");
+					}//end if
+					//partition and send --> url, list of tests
+					List<String> buckets = null;
+					if (cucumber) {
+						buckets = codeService.getFeatureBuckets(location, hosts.size());
+					} else {
+						buckets = codeService.getTestBuckets(location, hosts.size());
+					}//end if
+					logger.info("... hosts completed.  Starting to check for additional parameters...");
+					String[] parameters = null;
+					Collection<String> values = new ArrayList<String>();
+					//check for additional parameters
+					if (!request.getParameterMap().isEmpty()) {
+						for (Entry<String,String[]> entry : request.getParameterMap().entrySet()) {
+							if (entry.getKey().contains("parameter")) {
+								values.add(entry.getValue()[0]);
+							}//end if
+						}//end for
+					}//end if
+					logger.info("... checks completed.  Starting to dispatch...");
+					//send
+					for (int i=0;i<buckets.size();i++) {
+
+						if (cucumber) {
+							//build the cucumber parameters
+							StringBuilder cucumberParameter = new StringBuilder("-Dcucumber.options=\"");
+							if (tag != null) {
+								cucumberParameter.append("--tags ").append(tag).append(" ");
+							}//end if
+							cucumberParameter.append(buckets.get(i));
+							cucumberParameter.append("\"");
+							//add
+							values.add(cucumberParameter.toString());
+						}//end if			
+						
+						parameters = values.toArray(new String[values.size()]);
+						//execute
+						hostService.run(hosts.get(i), filename, buckets.get(i),parameters);
+					}//end for					
+					logger.info("... dispatch completed.");					
+				}
+				catch (Exception e) {
+					logger.error(e);
+				}
+			}
 			
-			parameters = values.toArray(new String[values.size()]);
-			//execute
-			hostService.run(hosts.get(i), filename, buckets.get(i),parameters);
-		}//end for					
+		});		
+
 		//parse for content
 		response.setStatus(HttpStatus.CREATED.value());
 		//signal
@@ -205,5 +235,10 @@ public class RunEndpoint {
 				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + uuid + ".zip\"")
 				.contentType(MediaType.APPLICATION_OCTET_STREAM)
 				.body(file);
+	}
+	
+	@RequestMapping("/requests")
+	public List<JobRequest> getJobRequests() throws Exception {
+		return jobRequestRepository.findAll();
 	}
 }
