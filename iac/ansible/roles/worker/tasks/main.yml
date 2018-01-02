@@ -49,3 +49,6 @@
     dest: /root/.m2/settings.xml
     owner: root
     group: root
+
+- name: run maven
+  command: /usr/local/maven/bin/mvn -f /tmp/pom.xml -s /root/.m2/settings.xml test
